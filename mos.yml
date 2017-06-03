@@ -9,8 +9,6 @@ tags:
 
 sources:
   - src
-filesystem:
-  - fs
 config_schema:
   - ["aws", "o", {title: "AWS settings"}]
   - ["aws.shadow", "o", {title: "AWS Device Shadow settings"}]
