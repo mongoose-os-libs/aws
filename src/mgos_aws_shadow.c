@@ -15,9 +15,11 @@
 #include "mongoose/mongoose.h"
 
 #include "fw/src/mgos_hal.h"
-#include "fw/src/mgos_mqtt.h"
 #include "fw/src/mgos_sys_config.h"
 #include "fw/src/mgos_utils.h"
+
+/* mqtt lib should be included */
+#include "mgos_mqtt.h"
 
 #define AWS_SHADOW_TOPIC_PREFIX "$aws/things/"
 #define AWS_SHADOW_TOPIC_PREFIX_LEN (sizeof(AWS_SHADOW_TOPIC_PREFIX) - 1)
