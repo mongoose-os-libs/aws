@@ -2,10 +2,6 @@ author: mongoose-os
 type: lib
 description: Amazon AWS IoT integration
 version: 1.0
-tags:
-  - cloud
-  - c
-  - js
 
 sources:
   - src
@@ -16,7 +12,9 @@ config_schema:
 libs:
   - origin: https://github.com/mongoose-os-libs/mqtt
 tags:
-  - aws
+  - amazon
   - cloud
+  - c
+  - js
 
 skeleton_version: 2017-05-18
