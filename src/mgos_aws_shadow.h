@@ -3,6 +3,11 @@
  * All rights reserved
  */
 
+/*
+ * View this file on GitHub:
+ * [mgos_aws_shadow.h](https://github.com/mongoose-os-libs/aws/blob/master/src/mgos_aws_shadow.h)
+ */
+
 #ifndef CS_FW_SRC_MGOS_AWS_SHADOW_H_
 #define CS_FW_SRC_MGOS_AWS_SHADOW_H_
 

@@ -24,10 +24,6 @@ In your Mongoose OS app, edit `mos.yml` file and add a reference to this
 library. See an [example app](https://github.com/mongoose-os-apps/blynk)
 that does that.
 
-## C/C++ API
-
-## JavaScript API
-
 ## Device configuration
 
 This library adds an `aws` configuration section to the device:
