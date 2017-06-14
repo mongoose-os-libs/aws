@@ -8,7 +8,7 @@ let AWS = {
       ud.cb(ud.ud, ev, rep, des);
     },
 
-    // ## **`AWS.Shadow.setStateHandler(callback, userdata);`**
+    // ## **`AWS.Shadow.setStateHandler(callback, userdata)`**
     //
     // Set AWS shadow state handler callback.
     //
@@ -46,6 +46,12 @@ let AWS = {
         ud: ud,
       });
     },
+
+    // ## **`AWS.Shadow.get()`**
+    //
+    // Request shadow state. The event handler will receive a `GET_ACCEPTED`
+    // event.
+    get: ffi('bool mgos_aws_shadow_get()'),
 
     // ## **`AWS.Shadow.update(version, state);`**
     //
