@@ -53,6 +53,11 @@ let AWS = {
     // event.
     get: ffi('bool mgos_aws_shadow_get()'),
 
+    // ## **`AWS.Shadow.getVersion();`**
+    // Return last shadow state version.
+    getVersion: ffi('double mgos_aws_shadow_get_last_state_version(void)'),
+
+
     // ## **`AWS.Shadow.update(version, state);`**
     //
     // Update AWS shadow state.

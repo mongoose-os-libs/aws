@@ -28,6 +28,8 @@
 #define TOKEN_LEN 8
 #define TOKEN_BUF_SIZE (TOKEN_LEN + 1)
 
+static uint64_t s_last_shadow_state_version;
+
 enum mgos_aws_shadow_topic_id {
   MGOS_AWS_SHADOW_TOPIC_UNKNOWN = 0,
   MGOS_AWS_SHADOW_TOPIC_GET = 1,
@@ -516,7 +518,7 @@ static void state_cb_oplya(void *arg, enum mgos_aws_shadow_event ev,
   free((void *) reported_md2.p);
   free((void *) desired_md2.p);
 
-  (void) version;
+  s_last_shadow_state_version = version;
 }
 
 void mgos_aws_shadow_set_state_handler_simple(
@@ -528,6 +530,10 @@ void mgos_aws_shadow_set_state_handler_simple(
   oplya_arg->cb_arg = arg;
 
   mgos_aws_shadow_set_state_handler(state_cb_oplya, oplya_arg);
+}
+
+double mgos_aws_shadow_get_last_state_version(void) {
+  return (double) s_last_shadow_state_version;
 }
 
 bool mgos_aws_init(void) {
