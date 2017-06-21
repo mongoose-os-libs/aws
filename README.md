@@ -24,6 +24,21 @@ In your Mongoose OS app, edit `mos.yml` file and add a reference to this
 library. See an [example app](https://github.com/mongoose-os-apps/blynk)
 that does that.
 
+## Remote management via AWS IoT
+
+If you're using Bash shell, you can use this alias to talk to your
+device interactively via AWS IoT:
+
+<pre class="command-line language-bash" data-user="chris" data-host="localhost" data-output="3-100"><code>alias mos1="mos --cert-file $(mos config-get mqtt.ssl_cert) --key-file $(mos config-get mqtt.ssl_key) --port mqtts://$(mos config-get mqtt.server)/$(mos config-get device.id)"
+mos1 ls -l
+init.js 330
+index.html 250
+...</code></pre>
+
+For more in-depth explanation, see
+[Secure remote device management with Mongoose OS](https://mongoose-os.com/blog/secure-remote-device-management-with-mongoose-os-and-aws-iot-for-esp32-esp8266-ti-cc3200-stm32/)
+blog post.
+
 ## Device configuration
 
 This library adds an `aws` configuration section to the device:
