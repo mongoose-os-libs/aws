@@ -8,8 +8,8 @@
  * [mgos_aws_shadow.h](https://github.com/mongoose-os-libs/aws/blob/master/src/mgos_aws_shadow.h)
  */
 
-#ifndef CS_FW_SRC_MGOS_AWS_SHADOW_H_
-#define CS_FW_SRC_MGOS_AWS_SHADOW_H_
+#ifndef CS_MOS_LIBS_AWS_SRC_MGOS_AWS_SHADOW_H_
+#define CS_MOS_LIBS_AWS_SRC_MGOS_AWS_SHADOW_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -17,6 +17,8 @@
 #include "common/mg_str.h"
 #include "fw/src/mgos_features.h"
 #include "fw/src/mgos_init.h"
+
+#include "mgos_aws.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,10 +91,8 @@ bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...);
  */
 bool mgos_aws_shadow_update_simple(double version, const char *state_json);
 
-bool mgos_aws_init(void);
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* CS_FW_SRC_MGOS_AWS_SHADOW_H_ */
+#endif /* CS_MOS_LIBS_AWS_SRC_MGOS_AWS_SHADOW_H_ */

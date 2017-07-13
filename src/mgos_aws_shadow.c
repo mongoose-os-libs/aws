@@ -3,8 +3,6 @@
  * All rights reserved
  */
 
-#include "mgos_aws_shadow.h"
-
 #include <stdlib.h>
 
 #include "common/cs_crc32.h"
@@ -18,8 +16,7 @@
 #include "fw/src/mgos_sys_config.h"
 #include "fw/src/mgos_utils.h"
 
-/* mqtt lib should be included */
-#include "mgos_mqtt.h"
+#include "mgos_aws_shadow.h"
 
 #define AWS_SHADOW_TOPIC_PREFIX "$aws/things/"
 #define AWS_SHADOW_TOPIC_PREFIX_LEN (sizeof(AWS_SHADOW_TOPIC_PREFIX) - 1)
@@ -455,17 +452,12 @@ const char *mgos_aws_shadow_event_name(enum mgos_aws_shadow_event ev) {
 
 static bool mgos_aws_shadow_init(void) {
   struct sys_config *cfg = get_cfg();
-  struct sys_config_aws_shadow *scfg = &cfg->aws.shadow;
   if (!cfg->mqtt.enable) {
     LOG(LL_ERROR, ("AWS Device Shadow requires MQTT"));
     return false;
   }
   const char *thing_name = NULL;
-  if (scfg->thing_name != NULL) {
-    thing_name = scfg->thing_name;
-  } else if (cfg->device.id != NULL) {
-    thing_name = cfg->device.id;
-  } else {
+  if ((thing_name = mgos_aws_get_thing_name()) == NULL) {
     LOG(LL_ERROR, ("AWS Device Shadow requires thing_name or device.id"));
     return false;
   }
@@ -534,8 +526,4 @@ void mgos_aws_shadow_set_state_handler_simple(
 
 double mgos_aws_shadow_get_last_state_version(void) {
   return (double) s_last_shadow_state_version;
-}
-
-bool mgos_aws_init(void) {
-  return true;
 }
