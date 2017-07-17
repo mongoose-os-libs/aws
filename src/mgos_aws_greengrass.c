@@ -169,6 +169,7 @@ static void aws_gg_connect(void) {
   opts.ssl_cert = mcfg->ssl_cert;
   opts.ssl_key = mcfg->ssl_key;
   opts.ssl_ca_cert = mcfg->ssl_ca_cert;
+  opts.ssl_cipher_suites = mcfg->ssl_cipher_suites;
 
   if (mg_connect_http_opt(mgos_get_mgr(), aws_gg_handler, NULL, opts, url, NULL,
                           NULL) == NULL) {
