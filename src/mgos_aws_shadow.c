@@ -12,9 +12,9 @@
 #include "frozen/frozen.h"
 #include "mongoose/mongoose.h"
 
-#include "fw/src/mgos_hal.h"
-#include "fw/src/mgos_sys_config.h"
-#include "fw/src/mgos_utils.h"
+#include "mgos_hal.h"
+#include "mgos_sys_config.h"
+#include "mgos_utils.h"
 
 #include "mgos_aws_shadow.h"
 

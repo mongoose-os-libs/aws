@@ -11,7 +11,7 @@
 #ifndef CS_MOS_LIBS_AWS_SRC_MGOS_AWS_GREENGRASS_H_
 #define CS_MOS_LIBS_AWS_SRC_MGOS_AWS_GREENGRASS_H_
 
-#include <fw/src/mgos_net.h>
+#include <mgos_net.h>
 
 #include "mgos_aws.h"
 

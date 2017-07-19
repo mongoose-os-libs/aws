@@ -10,9 +10,9 @@
 #include "frozen/frozen.h"
 #include "mongoose/mongoose.h"
 
-#include "fw/src/mgos_sys_config.h"
-#include "fw/src/mgos_timers.h"
-#include "fw/src/mgos_utils.h"
+#include "mgos_sys_config.h"
+#include "mgos_timers.h"
+#include "mgos_utils.h"
 
 #include "mgos_aws_greengrass.h"
 

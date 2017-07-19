@@ -3,7 +3,7 @@
  * All rights reserved
  */
 
-#include "fw/src/mgos_sys_config.h"
+#include "mgos_sys_config.h"
 #include "mgos_aws.h"
 #include "mgos_aws_greengrass.h"
 

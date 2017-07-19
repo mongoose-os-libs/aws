@@ -15,8 +15,8 @@
 #include <stdint.h>
 
 #include "common/mg_str.h"
-#include "fw/src/mgos_features.h"
-#include "fw/src/mgos_init.h"
+#include "mgos_features.h"
+#include "mgos_init.h"
 
 #include "mgos_aws.h"
 
