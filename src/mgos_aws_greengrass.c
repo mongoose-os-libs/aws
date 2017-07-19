@@ -186,13 +186,13 @@ static void aws_gg_reconnect_timer_cb(void *user_data) {
   (void) user_data;
 }
 
-#if MGOS_ENABLE_WIFI
-void aws_gg_wifi_ready(enum mgos_wifi_status event, void *arg) {
-  if (event != MGOS_WIFI_IP_ACQUIRED) return;
+void aws_gg_net_ready(enum mgos_net_event ev,
+                      const struct mgos_net_event_data *ev_data, void *arg) {
+  if (ev != MGOS_NET_EV_IP_ACQUIRED) return;
   aws_gg_reconnect();
+  (void) ev_data;
   (void) arg;
 }
-#endif
 
 void aws_gg_reconnect(void) {
   const struct sys_config_aws_greengrass *gcfg = &get_cfg()->aws.greengrass;

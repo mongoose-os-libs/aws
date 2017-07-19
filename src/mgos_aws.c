@@ -26,11 +26,7 @@ bool mgos_aws_init(void) {
   LOG(LL_INFO, ("AWS Greengrass enable (%d)", gcfg->enable));
 
   if (gcfg->enable && !mcfg->enable) {
-#if MGOS_ENABLE_WIFI
-    mgos_wifi_add_on_change_cb(aws_gg_wifi_ready, NULL);
-#else
-    aws_gg_reconnect();
-#endif
+    mgos_net_add_event_handler(aws_gg_net_ready, NULL);
   }
   return true;
 }

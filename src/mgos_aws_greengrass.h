@@ -11,7 +11,7 @@
 #ifndef CS_MOS_LIBS_AWS_SRC_MGOS_AWS_GREENGRASS_H_
 #define CS_MOS_LIBS_AWS_SRC_MGOS_AWS_GREENGRASS_H_
 
-#include <fw/src/mgos_wifi.h>
+#include <fw/src/mgos_net.h>
 
 #include "mgos_aws.h"
 
@@ -21,9 +21,8 @@ extern "C" {
 
 #if MG_ENABLE_SSL
 
-#if MGOS_ENABLE_WIFI
-void aws_gg_wifi_ready(enum mgos_wifi_status event, void *arg);
-#endif /* MGOS_ENABLE_WIFI */
+void aws_gg_net_ready(enum mgos_net_event ev,
+                      const struct mgos_net_event_data *ev_data, void *arg);
 void aws_gg_reconnect(void);
 
 #endif /* MG_ENABLE_SSL */
