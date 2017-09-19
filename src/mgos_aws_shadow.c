@@ -38,6 +38,18 @@ enum mgos_aws_shadow_topic_id {
   MGOS_AWS_SHADOW_TOPIC_UPDATE_DELTA = 7,
 };
 
+struct state_cb {
+  mgos_aws_shadow_state_handler cb;
+  void *userdata;
+  SLIST_ENTRY(state_cb) link;
+};
+
+struct error_cb {
+  mgos_aws_shadow_error_handler cb;
+  void *userdata;
+  SLIST_ENTRY(error_cb) link;
+};
+
 struct aws_shadow_state {
   struct mg_str thing_name;
   uint64_t current_version;
@@ -46,10 +58,8 @@ struct aws_shadow_state {
   unsigned int want_get : 1;
   unsigned int sent_get : 1;
   struct mbuf update;
-  mgos_aws_shadow_state_handler state_cb;
-  mgos_aws_shadow_error_handler error_cb;
-  void *state_cb_arg;
-  void *error_cb_arg;
+  SLIST_HEAD(state_cb_entries, state_cb) state_cb_entries;
+  SLIST_HEAD(error_cb_entries, error_cb) error_cb_entries;
 };
 
 static struct aws_shadow_state *s_shadow_state;
@@ -255,10 +265,11 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
         LOG(LL_INFO, ("Subscribed"));
         ss->online = true;
         ss->sent_get = false;
-        if (ss->state_cb != NULL) {
-          const struct mg_str empty = mg_mk_str_n("", 0);
-          ss->state_cb(ss->state_cb_arg, MGOS_AWS_SHADOW_CONNECTED, 0, empty,
-                       empty, empty, empty);
+        const struct mg_str empty = mg_mk_str_n("", 0);
+        struct state_cb *e;
+        SLIST_FOREACH(e, &ss->state_cb_entries, link) {
+          e->cb(e->userdata, MGOS_AWS_SHADOW_CONNECTED, 0, empty, empty, empty,
+                empty);
         }
       }
       break;
@@ -317,7 +328,7 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
             mg_mqtt_puback(nc, msg->message_id);
             break;
           }
-          if (ss->state_cb == NULL) {
+          if (SLIST_EMPTY(&ss->state_cb_entries)) {
             LOG(LL_WARN, ("No state handler, message ignored."));
             mg_mqtt_puback(nc, msg->message_id);
             break;
@@ -338,11 +349,14 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
                        &reported, &desired, &reported_md, &desired_md);
           }
           mgos_unlock();
-          ss->state_cb(ss->state_cb_arg, topic_id_to_aws_ev(topic_id), version,
-                       mg_mk_str_n(reported.ptr, reported.len),
-                       mg_mk_str_n(desired.ptr, desired.len),
-                       mg_mk_str_n(reported_md.ptr, reported_md.len),
-                       mg_mk_str_n(desired_md.ptr, desired_md.len));
+          struct state_cb *e;
+          SLIST_FOREACH(e, &ss->state_cb_entries, link) {
+            e->cb(e->userdata, topic_id_to_aws_ev(topic_id), version,
+                  mg_mk_str_n(reported.ptr, reported.len),
+                  mg_mk_str_n(desired.ptr, desired.len),
+                  mg_mk_str_n(reported_md.ptr, reported_md.len),
+                  mg_mk_str_n(desired_md.ptr, desired_md.len));
+          }
           mg_mqtt_puback(nc, msg->message_id);
           mgos_lock();
           ss->current_version = version;
@@ -356,12 +370,13 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
           json_scanf(msg->payload.p, msg->payload.len,
                      "{code: %d, message: %Q}", &code, &message);
           LOG(LL_ERROR, ("Error: %d %s", code, (message ? message : "")));
-          if (ss->error_cb != NULL) {
-            mgos_unlock();
-            ss->error_cb(ss->error_cb_arg, topic_id_to_aws_ev(topic_id), code,
-                         message ? message : "");
-            mgos_lock();
+          mgos_unlock();
+          struct error_cb *e;
+          SLIST_FOREACH(e, &ss->error_cb_entries, link) {
+            e->cb(e->userdata, topic_id_to_aws_ev(topic_id), code,
+                  message ? message : "");
           }
+          mgos_lock();
           free(message);
           break;
         }
@@ -381,8 +396,10 @@ void mgos_aws_shadow_set_state_handler(mgos_aws_shadow_state_handler state_cb,
                                        void *arg) {
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return;
   mgos_lock();
-  s_shadow_state->state_cb = state_cb;
-  s_shadow_state->state_cb_arg = arg;
+  struct state_cb *e = calloc(1, sizeof(*e));
+  e->cb = state_cb;
+  e->userdata = arg;
+  SLIST_INSERT_HEAD(&s_shadow_state->state_cb_entries, e, link);
   mgos_unlock();
 }
 
@@ -390,8 +407,10 @@ void mgos_aws_shadow_set_error_handler(mgos_aws_shadow_error_handler error_cb,
                                        void *arg) {
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return;
   mgos_lock();
-  s_shadow_state->error_cb = error_cb;
-  s_shadow_state->error_cb_arg = arg;
+  struct error_cb *e = calloc(1, sizeof(*e));
+  e->cb = error_cb;
+  e->userdata = arg;
+  SLIST_INSERT_HEAD(&s_shadow_state->error_cb_entries, e, link);
   mgos_unlock();
 }
 
@@ -464,6 +483,8 @@ static bool mgos_aws_shadow_init(void) {
   struct aws_shadow_state *ss =
       (struct aws_shadow_state *) calloc(1, sizeof(*ss));
   ss->thing_name = mg_mk_str(thing_name);
+  SLIST_INIT(&ss->state_cb_entries);
+  SLIST_INIT(&ss->error_cb_entries);
   mgos_mqtt_add_global_handler(mgos_aws_shadow_ev, ss);
   s_shadow_state = ss;
   char token[TOKEN_BUF_SIZE];
