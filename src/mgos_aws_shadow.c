@@ -307,7 +307,7 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
          * us,
          * but we otherwise ignore it.
          */
-        mg_mqtt_puback(nc, msg->message_id);
+        if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
         break;
       }
       if (topic_id == MGOS_AWS_SHADOW_TOPIC_GET_ACCEPTED ||
@@ -325,12 +325,12 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
                         version, topic_id));
           if (version < ss->current_version) {
             /* Thanks, not interested. */
-            mg_mqtt_puback(nc, msg->message_id);
+            if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
             break;
           }
           if (SLIST_EMPTY(&ss->state_cb_entries)) {
             LOG(LL_WARN, ("No state handler, message ignored."));
-            mg_mqtt_puback(nc, msg->message_id);
+            if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
             break;
           }
           struct json_token reported = JSON_INVALID_TOKEN;
@@ -357,14 +357,14 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
                   mg_mk_str_n(reported_md.ptr, reported_md.len),
                   mg_mk_str_n(desired_md.ptr, desired_md.len));
           }
-          mg_mqtt_puback(nc, msg->message_id);
+          if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
           mgos_lock();
           ss->current_version = version;
           break;
         }
         case MGOS_AWS_SHADOW_TOPIC_GET_REJECTED:
         case MGOS_AWS_SHADOW_TOPIC_UPDATE_REJECTED: {
-          mg_mqtt_puback(nc, msg->message_id);
+          if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
           int code = -1;
           char *message = NULL;
           json_scanf(msg->payload.p, msg->payload.len,
