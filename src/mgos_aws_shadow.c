@@ -470,8 +470,7 @@ const char *mgos_aws_shadow_event_name(enum mgos_aws_shadow_event ev) {
 }
 
 static bool mgos_aws_shadow_init(void) {
-  struct sys_config *cfg = get_cfg();
-  if (!cfg->mqtt.enable) {
+  if (!mgos_sys_config_get_mqtt_enable()) {
     LOG(LL_ERROR, ("AWS Device Shadow requires MQTT"));
     return false;
   }

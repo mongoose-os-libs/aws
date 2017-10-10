@@ -32,8 +32,6 @@ static void aws_gg_handler(struct mg_connection *nc, int ev, void *ev_data,
       break;
     }
     case MG_EV_HTTP_REPLY: {
-      struct sys_config *cfg = get_cfg();
-      struct sys_config_mqtt *mcfg = &cfg->mqtt;
       struct json_token t;
       char *ggca = NULL, *addr = NULL, *msg = NULL;
       int port = 0;
@@ -99,11 +97,11 @@ static void aws_gg_handler(struct mg_connection *nc, int ev, void *ev_data,
       }
 
       /* Set new MQTT settings */
-      mcfg->enable = true;
-      mgos_conf_set_str(&mcfg->server, a);
-      mgos_conf_set_str(&mcfg->ssl_ca_cert, s_aws_gg_ca_file);
+      mgos_sys_config_set_mqtt_enable(true);
+      mgos_sys_config_set_mqtt_server(a);
+      mgos_sys_config_set_mqtt_ssl_ca_cert(s_aws_gg_ca_file);
 
-      if (!save_cfg(cfg, &msg)) {
+      if (!save_cfg(&mgos_sys_config, &msg)) {
         LOG(LL_ERROR, ("%s", msg));
         goto clean;
       }
@@ -145,12 +143,11 @@ static char *aws_make_gg_url(const char *server, int port,
 }
 
 static void aws_gg_connect(void) {
-  const struct sys_config_mqtt *mcfg = &get_cfg()->mqtt;
   const char *thing_name = NULL;
   char *url = NULL; /* must be freed */
   struct mg_connect_opts opts;
 
-  if (mcfg->server == NULL) {
+  if (mgos_sys_config_get_mqtt_server() == NULL) {
     LOG(LL_ERROR, ("AWS Greengrass requires MQTT server"));
     return;
   }
@@ -158,18 +155,18 @@ static void aws_gg_connect(void) {
     LOG(LL_ERROR, ("AWS Greengrass requires thing_name or device.id"));
     return;
   }
-  if ((url = aws_make_gg_url(mcfg->server, s_aws_gg_port, s_aws_gg_thing_path,
-                             thing_name)) == NULL) {
+  if ((url = aws_make_gg_url(mgos_sys_config_get_mqtt_server(), s_aws_gg_port,
+                             s_aws_gg_thing_path, thing_name)) == NULL) {
     LOG(LL_ERROR, ("Can't make AWS Greengrass url"));
     return;
   }
   LOG(LL_INFO, ("AWS Greengrass connecting to %s", url));
 
   memset(&opts, 0, sizeof(opts));
-  opts.ssl_cert = mcfg->ssl_cert;
-  opts.ssl_key = mcfg->ssl_key;
-  opts.ssl_ca_cert = mcfg->ssl_ca_cert;
-  opts.ssl_cipher_suites = mcfg->ssl_cipher_suites;
+  opts.ssl_cert = mgos_sys_config_get_mqtt_ssl_cert();
+  opts.ssl_key = mgos_sys_config_get_mqtt_ssl_key();
+  opts.ssl_ca_cert = mgos_sys_config_get_mqtt_ssl_ca_cert();
+  opts.ssl_cipher_suites = mgos_sys_config_get_mqtt_ssl_cipher_suites();
 
   if (mg_connect_http_opt(mgos_get_mgr(), aws_gg_handler, NULL, opts, url, NULL,
                           NULL) == NULL) {
@@ -195,16 +192,14 @@ void aws_gg_net_ready(enum mgos_net_event ev,
 }
 
 void aws_gg_reconnect(void) {
-  const struct sys_config_aws_greengrass *gcfg = &get_cfg()->aws.greengrass;
-
   if (s_aws_gg_reconnect_timeout <= 0) s_aws_gg_reconnect_timeout = 1;
   int t = s_aws_gg_reconnect_timeout * 2;
 
-  if (t < gcfg->reconnect_timeout_min) {
-    t = gcfg->reconnect_timeout_min;
+  if (t < mgos_sys_config_get_aws_greengrass_reconnect_timeout_min()) {
+    t = mgos_sys_config_get_aws_greengrass_reconnect_timeout_min();
   }
-  if (t > gcfg->reconnect_timeout_max) {
-    t = gcfg->reconnect_timeout_max;
+  if (t > mgos_sys_config_get_aws_greengrass_reconnect_timeout_max()) {
+    t = mgos_sys_config_get_aws_greengrass_reconnect_timeout_max();
   }
 
   LOG(LL_INFO, ("AWS Greengrass connecting after %d s", t));
