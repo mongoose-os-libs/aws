@@ -21,8 +21,6 @@ libs:
   - origin: https://github.com/mongoose-os-libs/mqtt
 
 tags:
-  - amazon
-  - aws
   - c
   - cloud
 
