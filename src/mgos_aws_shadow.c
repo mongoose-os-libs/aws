@@ -300,7 +300,7 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
            (int) msg->topic.len, msg->topic.p, topic_id, msg->message_id,
            (int) client_token.len, client_token.ptr ? client_token.ptr : "",
            (int) msg->payload.len, msg->payload.p));
-      if (!token_matches) {
+      if (!token_matches && topic_id != MGOS_AWS_SHADOW_TOPIC_UPDATE_ACCEPTED) {
         /*
          * This is not a response to one of our requests.
          * Still needs to be acked so that the broker doesn't lose patience with
