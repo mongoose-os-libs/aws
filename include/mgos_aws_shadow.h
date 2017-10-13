@@ -4,8 +4,7 @@
  */
 
 /*
- * View this file on GitHub:
- * [mgos_aws_shadow.h](https://github.com/mongoose-os-libs/aws/blob/master/src/mgos_aws_shadow.h)
+ * AWS device shadow API.
  */
 
 #ifndef CS_MOS_LIBS_AWS_SRC_MGOS_AWS_SHADOW_H_

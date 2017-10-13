@@ -4,8 +4,7 @@
  */
 
 /*
- * View this file on GitHub:
- * [mgos_aws.h](https://github.com/mongoose-os-libs/aws/blob/master/src/mgos_aws.h)
+ * AWS API.
  */
 
 #ifndef CS_FW_SRC_MGOS_AWS_H_
@@ -22,6 +21,7 @@ extern "C" {
 
 bool mgos_aws_init(void);
 
+/* Return AWS IoT thing name. */
 const char *mgos_aws_get_thing_name(void);
 
 #ifdef __cplusplus
