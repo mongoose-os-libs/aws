@@ -1,11 +1,28 @@
 # AWS IoT support for Mongoose OS
 
-This Mongoose OS library allows your device to talk to Amazon AWS IoT service.
-It implements device shadow API in both C/C++ and JavaScript, allowing a
-developer to quickly prototype the device logic in JS before jumping to the
+This library implements integration of Mongoose OS with AWS IoT.
+
+It provides device shadow API in both C/C++ and JavaScript, allowing
+developers to quickly prototype the device logic in JS before jumping to the
 C/C++ implementation.
 
-`mos` tool provides `mos aws-iot-setup` command for quick AWS IoT provisioning.
+## Setup cloud side
+
+- Install an [AWS CLI command line utility](https://aws.amazon.com/cli/)
+- Follow the [AWS CLI configuration guide](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) to setup your AWS credentials
+
+## Setup side
+
+- Connect the device to your computer with a micro-USB cable
+- Follow [installation instructions](https://mongoose-os.com/software.html) to install `mos` tool on your computer
+- Start `mos` tool. A Web UI will appear, with the connection dialog
+- Select "Serial Port", click Connect
+- Choose "mos-PLATFORM-latest" firmware, click Flash
+- Enter your WiFi credentials, click "Save"
+- Close the device setup dialog
+- Click on configuration tab in mos Web UI, fill in AWS parameters and click "Save".
+
+
 Take a look at the example video that shows how to implement Internet button
 functionality in less than 2 minutes:
 
