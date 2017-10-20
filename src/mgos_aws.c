@@ -22,7 +22,6 @@ bool mgos_aws_init(void) {
 
   if (mgos_sys_config_get_aws_greengrass_enable() &&
       !mgos_sys_config_get_mqtt_enable()) {
-    mgos_mqtt_set_max_qos(0); /* TODO(lsm): remove when AWS GG supports QoS1 */
     mgos_net_add_event_handler(aws_gg_net_ready, NULL);
   }
   return true;

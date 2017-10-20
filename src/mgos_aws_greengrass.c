@@ -100,6 +100,8 @@ static void aws_gg_handler(struct mg_connection *nc, int ev, void *ev_data,
       mgos_sys_config_set_mqtt_enable(true);
       mgos_sys_config_set_mqtt_server(a);
       mgos_sys_config_set_mqtt_ssl_ca_cert(s_aws_gg_ca_file);
+      /* TODO(lsm): remove when AWS GG supports QoS > 0 */
+      mgos_sys_config_set_mqtt_max_qos(0);
 
       if (!save_cfg(&mgos_sys_config, &msg)) {
         LOG(LL_ERROR, ("%s", msg));
