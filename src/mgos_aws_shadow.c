@@ -312,7 +312,7 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
       }
       if (topic_id == MGOS_AWS_SHADOW_TOPIC_GET_ACCEPTED ||
           topic_id == MGOS_AWS_SHADOW_TOPIC_GET_REJECTED) {
-        ss->want_get = false;
+        ss->want_get = ss->sent_get = false;
       }
       switch (topic_id) {
         case MGOS_AWS_SHADOW_TOPIC_GET_ACCEPTED:
