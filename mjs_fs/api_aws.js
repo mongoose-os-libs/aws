@@ -49,12 +49,13 @@ let AWS = {
 
     // ## **`AWS.Shadow.get()`**
     //
-    // Request shadow state. The event handler will receive a `GET_ACCEPTED`
-    // event.
+    // Request shadow state. The event handler (see
+    // `AWS.Shadow.setStateHandler()`) will receive a `GET_ACCEPTED` event.
+    // Returns true in case of success, false otherwise.
     get: ffi('bool mgos_aws_shadow_get()'),
 
     // ## **`AWS.Shadow.getVersion();`**
-    // Return last shadow state version.
+    // Return last shadow state version (a number).
     getVersion: ffi('double mgos_aws_shadow_get_last_state_version(void)'),
 
 
