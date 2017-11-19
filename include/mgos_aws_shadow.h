@@ -50,9 +50,9 @@ typedef void (*mgos_aws_shadow_error_handler)(void *arg,
                                               enum mgos_aws_shadow_event ev,
                                               int code, const char *message);
 
-void mgos_aws_shadow_set_state_handler(mgos_aws_shadow_state_handler state_cb,
+bool mgos_aws_shadow_set_state_handler(mgos_aws_shadow_state_handler state_cb,
                                        void *arg);
-void mgos_aws_shadow_set_error_handler(mgos_aws_shadow_error_handler error_cb,
+bool mgos_aws_shadow_set_error_handler(mgos_aws_shadow_error_handler error_cb,
                                        void *arg);
 
 /* Returns ascii name of the event: "CONNECTED", "GET_REJECTED", ... */
@@ -65,7 +65,7 @@ typedef bool (*mgos_aws_shadow_state_handler_simple)(
 /*
  * "Simple" version of mgos_aws_shadow_set_state_handler, primarily for FFI.
  */
-void mgos_aws_shadow_set_state_handler_simple(
+bool mgos_aws_shadow_set_state_handler_simple(
     mgos_aws_shadow_state_handler_simple state_cb_simple, void *arg);
 
 /*
@@ -89,6 +89,8 @@ bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...);
  * "Simple" version of mgos_aws_shadow_updatef, primarily for FFI.
  */
 bool mgos_aws_shadow_update_simple(double version, const char *state_json);
+
+bool mgos_aws_shadow_init(void);
 
 #ifdef __cplusplus
 }

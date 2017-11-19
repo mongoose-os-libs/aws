@@ -11,6 +11,8 @@ includes:
 config_schema:
   - ["aws", "o", {title: "AWS settings"}]
   - ["aws.thing_name", "s", "", {title: "Set thing name. If not specified, device.id is used"}]
+  - ["aws.shadow", "o", {title: "AWS device shadow settings"}]
+  - ["aws.shadow.enable", "b", true, {title: "Enable AWS device shadow"}]
   - ["aws.greengrass", "o", {title: "AWS Greengrass settings"}]
   - ["aws.greengrass.enable", "b", false, {title: "Enable AWS Greengrass service"}]
   - ["aws.greengrass.reconnect_timeout_min", "i", 2, {title: "Starting reconnect timeout"}]

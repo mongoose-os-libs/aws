@@ -3,9 +3,10 @@
  * All rights reserved
  */
 
-#include "mgos_sys_config.h"
 #include "mgos_aws.h"
 #include "mgos_aws_greengrass.h"
+#include "mgos_aws_shadow.h"
+#include "mgos_sys_config.h"
 
 const char *mgos_aws_get_thing_name(void) {
   if (mgos_sys_config_get_aws_thing_name() != NULL) {
@@ -19,6 +20,10 @@ const char *mgos_aws_get_thing_name(void) {
 bool mgos_aws_init(void) {
   LOG(LL_INFO, ("AWS Greengrass enable (%d)",
                 mgos_sys_config_get_aws_greengrass_enable()));
+
+  if (mgos_sys_config_get_aws_shadow_enable()) {
+    mgos_aws_shadow_init();
+  }
 
   if (mgos_sys_config_get_aws_greengrass_enable() &&
       !mgos_sys_config_get_mqtt_enable()) {
