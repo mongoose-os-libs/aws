@@ -2,10 +2,10 @@ let AWS = {
   Shadow: {
     _seth: ffi('void mgos_aws_shadow_set_state_handler_simple(int (*)(userdata, int, char *, char *, char *, char *), userdata)'),
     _upd: ffi('int mgos_aws_shadow_update_simple(double, char *)'),
-    _scb: function(ud, ev, rep, des) {
+    _scb: function(ud, ev, rep, des, rm, dm) {
       rep = rep !== "" ? JSON.parse(rep) : {};
       des = des !== "" ? JSON.parse(des) : {};
-      ud.cb(ud.ud, ev, rep, des);
+      ud.cb(ud.ud, ev, rep, des, rm, dm);
     },
 
     // ## **`AWS.Shadow.setStateHandler(callback, userdata)`**
@@ -14,7 +14,8 @@ let AWS = {
     //
     // When AWS shadow state changes, the callback is
     // called with the following arguments: `(userdata, event, reported,
-    // desired)`, where `userdata` is the userdata given to `setStateHandler`,
+    // desired, reported_metadata, desired_metadata)`,
+    // where `userdata` is the userdata given to `setStateHandler`,
     // `event` is one of the following: `AWS.Shadow.CONNECTED`,
     // `AWS.Shadow.GET_ACCEPTED`,
     // `AWS.Shadow.GET_REJECTED`, `AWS.Shadow.UPDATE_ACCEPTED`,
@@ -28,7 +29,7 @@ let AWS = {
     //
     // // Upon startup, report current actual state, "reported"
     // // When cloud sends us a command to update state ("desired"), do it
-    // AWS.Shadow.setStateHandler(function(data, event, reported, desired) {
+    // AWS.Shadow.setStateHandler(function(data, event, reported, desired, reported_metadata, desired_metadata) {
     //   if (event === AWS.Shadow.CONNECTED) {
     //     AWS.Shadow.update(0, {reported: state});  // Report device state
     //   } else if (event === AWS.Shadow.UPDATE_DELTA) {
