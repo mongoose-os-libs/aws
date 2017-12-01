@@ -14,6 +14,7 @@
 
 #include "mgos_hal.h"
 #include "mgos_shadow.h"
+#include "mgos_shadow_impl.h"
 #include "mgos_sys_config.h"
 #include "mgos_utils.h"
 
@@ -27,6 +28,8 @@
 #define TOKEN_BUF_SIZE (TOKEN_LEN + 1)
 
 static uint64_t s_last_shadow_state_version;
+
+static bool mgos_aws_shadow_init(void);
 
 enum mgos_aws_shadow_topic_id {
   MGOS_AWS_SHADOW_TOPIC_UNKNOWN = 0,
@@ -506,16 +509,7 @@ static bool add_state_handler(mgos_shadow_state_handler state_cb, void *arg) {
   return true;
 }
 
-// Initialise generic shadow API
-static const struct mgos_shadow s_shadow = {
-    .add_state_handler = add_state_handler,
-    .add_error_handler = (bool (*)(mgos_shadow_error_handler,
-                                   void *)) mgos_aws_shadow_set_error_handler,
-    .get = mgos_aws_shadow_get,
-    .updatevf = mgos_aws_shadow_updatevf,
-};
-
-bool mgos_aws_shadow_init(void) {
+static bool mgos_aws_shadow_init(void) {
   if (!mgos_sys_config_get_mqtt_enable()) {
     LOG(LL_ERROR, ("AWS Device Shadow requires MQTT"));
     return false;
@@ -523,6 +517,11 @@ bool mgos_aws_shadow_init(void) {
   const char *thing_name = NULL;
   if ((thing_name = mgos_aws_get_thing_name()) == NULL) {
     LOG(LL_ERROR, ("AWS Device Shadow requires thing_name or device.id"));
+    return false;
+  }
+  const char *mqtt_server = mgos_sys_config_get_mqtt_server();
+  if (mqtt_server == NULL || strstr(mqtt_server, "amazonaws.com") == NULL) {
+    LOG(LL_ERROR, ("MQTT is not configured for AWS, not initialising shadow"));
     return false;
   }
   struct aws_shadow_state *ss =
@@ -537,8 +536,22 @@ bool mgos_aws_shadow_init(void) {
   calc_token(ss, token);
   LOG(LL_INFO, ("Device shadow name: %.*s (token %s)", (int) ss->thing_name.len,
                 ss->thing_name.p, token));
-  mgos_shadow_set(&s_shadow);
   return true;
+}
+
+// Initialise generic shadow API
+static struct mgos_shadow s_shadow = {
+    .name = "aws",
+    .init = mgos_aws_shadow_init,
+    .add_state_handler = add_state_handler,
+    .add_error_handler = (bool (*)(mgos_shadow_error_handler,
+                                   void *)) mgos_aws_shadow_set_error_handler,
+    .get = mgos_aws_shadow_get,
+    .updatevf = mgos_aws_shadow_updatevf,
+};
+
+void mgos_aws_shadow_setup(void) {
+  mgos_shadow_register(&s_shadow);
 }
 
 /*

@@ -21,9 +21,7 @@ bool mgos_aws_init(void) {
   LOG(LL_INFO, ("AWS Greengrass enable (%d)",
                 mgos_sys_config_get_aws_greengrass_enable()));
 
-  if (mgos_sys_config_get_aws_shadow_enable()) {
-    mgos_aws_shadow_init();
-  }
+  mgos_aws_shadow_setup();
 
   if (mgos_sys_config_get_aws_greengrass_enable() &&
       !mgos_sys_config_get_mqtt_enable()) {
