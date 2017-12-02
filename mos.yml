@@ -18,6 +18,17 @@ config_schema:
   - ["aws.greengrass.reconnect_timeout_min", "i", 2, {title: "Starting reconnect timeout"}]
   - ["aws.greengrass.reconnect_timeout_max", "i", 60, {title: "Maximum reconnect timeout"}]
 
+# Device shadow max size is 8k. Adjust MQTT buffer size on larger platforms.
+conds:
+  - when: mos.platform == "esp32"
+    apply:
+      config_schema:
+        - ["mqtt.recv_mbuf_limit", 8192]
+  - when: mos.platform == "cc3220"
+    apply:
+      config_schema:
+        - ["mqtt.recv_mbuf_limit", 8192]
+
 libs:
   - origin: https://github.com/mongoose-os-libs/ca-bundle
   - origin: https://github.com/mongoose-os-libs/mqtt
