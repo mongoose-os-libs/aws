@@ -60,6 +60,11 @@ struct error_cb {
   SLIST_ENTRY(error_cb) link;
 };
 
+struct update_pending {
+  struct mbuf data;
+  STAILQ_ENTRY(update_pending) link;
+};
+
 struct aws_shadow_state {
   struct mg_str thing_name;
   uint64_t current_version;
@@ -67,7 +72,7 @@ struct aws_shadow_state {
   unsigned int online : 1;
   unsigned int want_get : 1;
   unsigned int sent_get : 1;
-  struct mbuf update;
+  STAILQ_HEAD(update_entries, update_pending) update_entries;
   SLIST_HEAD(state_cb_entries, state_cb) state_cb_entries;
   SLIST_HEAD(error_cb_entries, error_cb) error_cb_entries;
   SLIST_HEAD(state_cb_new_entries, state_cb_new) state_cb_new_entries;
@@ -228,15 +233,17 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
         mbuf_free(&buf);
         free(topic);
       }
-      if (ss->update.len > 0) {
+      struct update_pending *up, *tmp;
+      STAILQ_FOREACH_SAFE(up, &ss->update_entries, link, tmp) {
         char *topic = get_aws_shadow_topic_name(ss->thing_name,
                                                 MGOS_AWS_SHADOW_TOPIC_UPDATE);
         LOG(LL_INFO,
-            ("Update: %.*s", (int) MIN(200, ss->update.len), ss->update.buf));
-        mgos_mqtt_pub(topic, ss->update.buf, ss->update.len, 1 /* qos */,
+            ("Update: %.*s", (int) MIN(200, up->data.len), up->data.buf));
+        mgos_mqtt_pub(topic, up->data.buf, up->data.len, 1 /* qos */,
                       false /* retain */);
-        mbuf_remove(&ss->update, ss->update.len);
-        mbuf_trim(&ss->update);
+        STAILQ_REMOVE(&ss->update_entries, up, update_pending, link);
+        mbuf_free(&up->data);
+        free(up);
         free(topic);
       }
       break;
@@ -449,13 +456,12 @@ bool mgos_aws_shadow_updatevf(uint64_t version, const char *state_jsonf,
                               va_list ap) {
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
   mgos_lock();
-  if (s_shadow_state->update.len > 0) {
-    mbuf_free(&s_shadow_state->update);
-    mbuf_init(&s_shadow_state->update, 50);
-  }
+  struct update_pending *up = calloc(1, sizeof(*up));
+  mbuf_init(&up->data, 50);
+  STAILQ_INSERT_TAIL(&s_shadow_state->update_entries, up, link);
   char token[TOKEN_BUF_SIZE];
   calc_token(s_shadow_state, token);
-  struct json_out out = JSON_OUT_MBUF(&s_shadow_state->update);
+  struct json_out out = JSON_OUT_MBUF(&up->data);
   json_printf(&out, "{state: ");
   json_vprintf(&out, state_jsonf, ap);
   if (version > 0) {
@@ -527,6 +533,7 @@ static bool mgos_aws_shadow_init(void) {
   struct aws_shadow_state *ss =
       (struct aws_shadow_state *) calloc(1, sizeof(*ss));
   ss->thing_name = mg_mk_str(thing_name);
+  STAILQ_INIT(&ss->update_entries);
   SLIST_INIT(&ss->state_cb_entries);
   SLIST_INIT(&ss->state_cb_new_entries);
   SLIST_INIT(&ss->error_cb_entries);
