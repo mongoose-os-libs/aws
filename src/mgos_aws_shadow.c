@@ -14,7 +14,6 @@
 
 #include "mgos_hal.h"
 #include "mgos_shadow.h"
-#include "mgos_shadow_impl.h"
 #include "mgos_sys_config.h"
 #include "mgos_utils.h"
 
@@ -28,8 +27,6 @@
 #define TOKEN_BUF_SIZE (TOKEN_LEN + 1)
 
 static uint64_t s_last_shadow_state_version;
-
-static bool mgos_aws_shadow_init(void);
 
 enum mgos_aws_shadow_topic_id {
   MGOS_AWS_SHADOW_TOPIC_UNKNOWN = 0,
@@ -46,12 +43,6 @@ struct state_cb {
   mgos_aws_shadow_state_handler cb;
   void *userdata;
   SLIST_ENTRY(state_cb) link;
-};
-
-struct state_cb_new {
-  mgos_shadow_state_handler cb;
-  void *userdata;
-  SLIST_ENTRY(state_cb_new) link;
 };
 
 struct error_cb {
@@ -75,7 +66,6 @@ struct aws_shadow_state {
   STAILQ_HEAD(update_entries, update_pending) update_entries;
   SLIST_HEAD(state_cb_entries, state_cb) state_cb_entries;
   SLIST_HEAD(error_cb_entries, error_cb) error_cb_entries;
-  SLIST_HEAD(state_cb_new_entries, state_cb_new) state_cb_new_entries;
 };
 
 static struct aws_shadow_state *s_shadow_state;
@@ -287,10 +277,7 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
           e->cb(e->userdata, MGOS_AWS_SHADOW_CONNECTED, 0, empty, empty, empty,
                 empty);
         }
-        struct state_cb_new *enew;
-        SLIST_FOREACH(enew, &ss->state_cb_new_entries, link) {
-          enew->cb(enew->userdata, MGOS_SHADOW_CONNECTED, &empty);
-        }
+        mgos_event_trigger(MGOS_SHADOW_CONNECTED, NULL);
       }
       break;
     }
@@ -348,8 +335,13 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
             if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
             break;
           }
-          if (SLIST_EMPTY(&ss->state_cb_entries) &&
-              SLIST_EMPTY(&ss->state_cb_new_entries)) {
+
+          int ev = MGOS_SHADOW_CONNECTED + topic_id_to_aws_ev(topic_id);
+          mgos_event_trigger(ev, &msg->payload);
+          LOG(LL_DEBUG,
+              ("%d [%.*s]", ev, (int) msg->payload.len, msg->payload.p));
+
+          if (SLIST_EMPTY(&ss->state_cb_entries)) {
             LOG(LL_WARN, ("No state handler, message ignored."));
             if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
             break;
@@ -378,12 +370,6 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
                   mg_mk_str_n(reported_md.ptr, reported_md.len),
                   mg_mk_str_n(desired_md.ptr, desired_md.len));
           }
-          struct state_cb_new *enew;
-          SLIST_FOREACH(enew, &ss->state_cb_new_entries, link) {
-            enew->cb(enew->userdata,
-                     (enum mgos_shadow_event) topic_id_to_aws_ev(topic_id),
-                     &msg->payload);
-          }
           if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
           mgos_lock();
           ss->current_version = version;
@@ -391,20 +377,21 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
         }
         case MGOS_AWS_SHADOW_TOPIC_GET_REJECTED:
         case MGOS_AWS_SHADOW_TOPIC_UPDATE_REJECTED: {
+          struct mgos_shadow_error se = {.code = -1, .message = NULL};
           if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
-          int code = -1;
-          char *message = NULL;
           json_scanf(msg->payload.p, msg->payload.len,
-                     "{code: %d, message: %Q}", &code, &message);
-          LOG(LL_ERROR, ("Error: %d %s", code, (message ? message : "")));
+                     "{code: %d, message: %Q}", &se.code, &se.message);
+          mgos_event_trigger(topic_id + MGOS_SHADOW_CONNECTED, &se);
+          LOG(LL_ERROR,
+              ("Error: %d %s", se.code, (se.message ? se.message : "")));
           mgos_unlock();
           struct error_cb *e;
           SLIST_FOREACH(e, &ss->error_cb_entries, link) {
-            e->cb(e->userdata, topic_id_to_aws_ev(topic_id), code,
-                  message ? message : "");
+            e->cb(e->userdata, topic_id_to_aws_ev(topic_id), se.code,
+                  se.message ? se.message : "");
           }
           mgos_lock();
-          free(message);
+          free(se.message);
           break;
         }
         /* We do not subscribe to GET and UPDATE */
@@ -504,18 +491,19 @@ const char *mgos_aws_shadow_event_name(enum mgos_aws_shadow_event ev) {
   return "";
 }
 
-static bool add_state_handler(mgos_shadow_state_handler state_cb, void *arg) {
-  if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
-  mgos_lock();
-  struct state_cb_new *e = calloc(1, sizeof(*e));
-  e->cb = state_cb;
-  e->userdata = arg;
-  SLIST_INSERT_HEAD(&s_shadow_state->state_cb_new_entries, e, link);
-  mgos_unlock();
-  return true;
+static void update_cb(int ev, void *ev_data, void *userdata) {
+  struct mgos_shadow_update_data *data = ev_data;
+  mgos_aws_shadow_updatevf(data->version, data->json_fmt, data->ap);
+  (void) userdata;
+  (void) ev;
 }
 
-static bool mgos_aws_shadow_init(void) {
+bool mgos_aws_shadow_init(void) {
+  const char *impl = mgos_sys_config_get_device_shadow_impl();
+  if (impl != NULL && strcmp(impl, "aws") != 0) {
+    LOG(LL_ERROR, ("device.shadow=%s, not initialising AWS shadow", impl));
+    return false;
+  }
   if (!mgos_sys_config_get_mqtt_enable()) {
     LOG(LL_ERROR, ("AWS Device Shadow requires MQTT"));
     return false;
@@ -535,30 +523,17 @@ static bool mgos_aws_shadow_init(void) {
   ss->thing_name = mg_mk_str(thing_name);
   STAILQ_INIT(&ss->update_entries);
   SLIST_INIT(&ss->state_cb_entries);
-  SLIST_INIT(&ss->state_cb_new_entries);
   SLIST_INIT(&ss->error_cb_entries);
   mgos_mqtt_add_global_handler(mgos_aws_shadow_ev, ss);
   s_shadow_state = ss;
   char token[TOKEN_BUF_SIZE];
   calc_token(ss, token);
+  mgos_event_add_handler(MGOS_SHADOW_GET,
+                         (mgos_event_handler_t) mgos_aws_shadow_get, NULL);
+  mgos_event_add_handler(MGOS_SHADOW_UPDATE, update_cb, NULL);
   LOG(LL_INFO, ("Device shadow name: %.*s (token %s)", (int) ss->thing_name.len,
                 ss->thing_name.p, token));
   return true;
-}
-
-// Initialise generic shadow API
-static struct mgos_shadow s_shadow = {
-    .name = "aws",
-    .init = mgos_aws_shadow_init,
-    .add_state_handler = add_state_handler,
-    .add_error_handler = (bool (*)(mgos_shadow_error_handler,
-                                   void *)) mgos_aws_shadow_set_error_handler,
-    .get = mgos_aws_shadow_get,
-    .updatevf = mgos_aws_shadow_updatevf,
-};
-
-void mgos_aws_shadow_setup(void) {
-  mgos_shadow_register(&s_shadow);
 }
 
 /*

@@ -90,7 +90,7 @@ bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...);
  */
 bool mgos_aws_shadow_update_simple(double version, const char *state_json);
 
-void mgos_aws_shadow_setup(void);
+bool mgos_aws_shadow_init(void);
 
 #ifdef __cplusplus
 }

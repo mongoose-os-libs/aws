@@ -6,6 +6,7 @@
 #include "mgos_aws.h"
 #include "mgos_aws_greengrass.h"
 #include "mgos_aws_shadow.h"
+#include "mgos_event.h"
 #include "mgos_sys_config.h"
 
 const char *mgos_aws_get_thing_name(void) {
@@ -21,7 +22,8 @@ bool mgos_aws_init(void) {
   LOG(LL_INFO, ("AWS Greengrass enable (%d)",
                 mgos_sys_config_get_aws_greengrass_enable()));
 
-  mgos_aws_shadow_setup();
+  mgos_event_add_handler(MGOS_EVENT_INIT_DONE,
+                         (mgos_event_handler_t) mgos_aws_shadow_init, NULL);
 
   if (mgos_sys_config_get_aws_greengrass_enable() &&
       !mgos_sys_config_get_mqtt_enable()) {
