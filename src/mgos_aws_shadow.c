@@ -342,7 +342,6 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
               ("%d [%.*s]", ev, (int) msg->payload.len, msg->payload.p));
 
           if (SLIST_EMPTY(&ss->state_cb_entries)) {
-            LOG(LL_WARN, ("No state handler, message ignored."));
             if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
             break;
           }
@@ -408,6 +407,10 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
 
 bool mgos_aws_shadow_set_state_handler(mgos_aws_shadow_state_handler state_cb,
                                        void *arg) {
+  /* Deprecated as of 2017/12/14. */
+  LOG(LL_WARN, ("mgos_aws_shadow is deprecated and will be removed soon, "
+                "use the shadow lib with AWS backend instead "
+                "(https://github.com/mongoose-os-libs/shadow)."));
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
   mgos_lock();
   struct state_cb *e = calloc(1, sizeof(*e));
