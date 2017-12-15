@@ -38,7 +38,7 @@ and keep your credentials secure.
 ## How to use this library
 
 In your Mongoose OS app, edit `mos.yml` file and add a reference to this
-library. See an [example app](https://github.com/mongoose-os-apps/blynk)
+library. See an [demo-c app](https://github.com/mongoose-os-apps/demo-c)
 that does that.
 
 ## Remote management via AWS IoT
