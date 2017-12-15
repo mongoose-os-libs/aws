@@ -376,21 +376,23 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
         }
         case MGOS_AWS_SHADOW_TOPIC_GET_REJECTED:
         case MGOS_AWS_SHADOW_TOPIC_UPDATE_REJECTED: {
-          struct mgos_shadow_error se = {.code = -1, .message = NULL};
+          struct mgos_shadow_error se = {.code = -1};
+          char *message = NULL;
           if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
           json_scanf(msg->payload.p, msg->payload.len,
-                     "{code: %d, message: %Q}", &se.code, &se.message);
+                     "{code: %d, message: %Q}", &se.code, &message);
+          se.message.p = message ? message : "";
+          se.message.len = strlen(message);
           mgos_event_trigger(topic_id + MGOS_SHADOW_CONNECTED, &se);
-          LOG(LL_ERROR,
-              ("Error: %d %s", se.code, (se.message ? se.message : "")));
+          LOG(LL_ERROR, ("Error: %d %s", se.code, (message ? message : "")));
           mgos_unlock();
           struct error_cb *e;
           SLIST_FOREACH(e, &ss->error_cb_entries, link) {
             e->cb(e->userdata, topic_id_to_aws_ev(topic_id), se.code,
-                  se.message ? se.message : "");
+                  message ? message : "");
           }
           mgos_lock();
-          free(se.message);
+          free(message);
           break;
         }
         /* We do not subscribe to GET and UPDATE */
