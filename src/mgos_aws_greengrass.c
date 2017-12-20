@@ -153,7 +153,7 @@ static void aws_gg_connect(void) {
     LOG(LL_ERROR, ("AWS Greengrass requires MQTT server"));
     return;
   }
-  if ((thing_name = mgos_aws_get_thing_name()) == NULL) {
+  if ((thing_name = mgos_sys_config_get_aws_thing_name()) == NULL) {
     LOG(LL_ERROR, ("AWS Greengrass requires thing_name or device.id"));
     return;
   }

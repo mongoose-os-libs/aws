@@ -515,7 +515,7 @@ bool mgos_aws_shadow_init(void) {
     return false;
   }
   const char *thing_name = NULL;
-  if ((thing_name = mgos_aws_get_thing_name()) == NULL) {
+  if ((thing_name = mgos_sys_config_get_aws_thing_name()) == NULL) {
     LOG(LL_ERROR, ("AWS Device Shadow requires thing_name or device.id"));
     return false;
   }

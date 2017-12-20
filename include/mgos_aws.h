@@ -21,9 +21,6 @@ extern "C" {
 
 bool mgos_aws_init(void);
 
-/* Return AWS IoT thing name. */
-const char *mgos_aws_get_thing_name(void);
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

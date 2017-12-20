@@ -9,24 +9,18 @@
 #include "mgos_event.h"
 #include "mgos_sys_config.h"
 
-const char *mgos_aws_get_thing_name(void) {
-  if (mgos_sys_config_get_aws_thing_name() != NULL) {
-    return mgos_sys_config_get_aws_thing_name();
-  } else if (mgos_sys_config_get_device_id() != NULL) {
-    return mgos_sys_config_get_device_id();
-  }
-  return NULL;
-}
-
 bool mgos_aws_init(void) {
   /*
-   * If thing_name is set explicitly, persist expanded MAC placeholders in it
+   * If aws.thing_name is set explicitly, persist expanded MAC placeholders in
+   * it; otherwise persist aws.thing_name to be device.id.
    */
   if (mgos_sys_config_get_aws_thing_name() != NULL) {
     char *thing_name = strdup(mgos_sys_config_get_aws_thing_name());
     mgos_expand_mac_address_placeholders(thing_name);
     mgos_sys_config_set_aws_thing_name(thing_name);
     free(thing_name);
+  } else if (mgos_sys_config_get_device_id() != NULL) {
+    mgos_sys_config_set_aws_thing_name(mgos_sys_config_get_device_id());
   }
 
   LOG(LL_INFO, ("AWS Greengrass enable (%d)",
