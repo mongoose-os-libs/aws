@@ -31,7 +31,7 @@ bool mgos_aws_init(void) {
 
   if (mgos_sys_config_get_aws_greengrass_enable() &&
       !mgos_sys_config_get_mqtt_enable()) {
-    mgos_net_add_event_handler(aws_gg_net_ready, NULL);
+    mgos_event_add_group_handler(MGOS_EVENT_GRP_NET, aws_gg_net_ready, NULL);
   }
   return true;
 }

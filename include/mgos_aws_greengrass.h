@@ -26,8 +26,7 @@ extern "C" {
 #if MG_ENABLE_SSL
 
 /* Network configuration hook handler for the AWS GreenGrass. */
-void aws_gg_net_ready(enum mgos_net_event ev,
-                      const struct mgos_net_event_data *ev_data, void *arg);
+void aws_gg_net_ready(int ev, void *evd, void *arg);
 
 /* Reconnect to GreenGrass. */
 void aws_gg_reconnect(void);

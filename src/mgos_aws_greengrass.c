@@ -185,11 +185,10 @@ static void aws_gg_reconnect_timer_cb(void *user_data) {
   (void) user_data;
 }
 
-void aws_gg_net_ready(enum mgos_net_event ev,
-                      const struct mgos_net_event_data *ev_data, void *arg) {
+void aws_gg_net_ready(int ev, void *evd, void *arg) {
   if (ev != MGOS_NET_EV_IP_ACQUIRED) return;
   aws_gg_reconnect();
-  (void) ev_data;
+  (void) evd;
   (void) arg;
 }
 
