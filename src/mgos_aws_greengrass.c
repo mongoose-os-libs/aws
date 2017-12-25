@@ -10,6 +10,7 @@
 #include "frozen/frozen.h"
 #include "mongoose/mongoose.h"
 
+#include "mgos_mqtt.h"
 #include "mgos_sys_config.h"
 #include "mgos_timers.h"
 #include "mgos_utils.h"

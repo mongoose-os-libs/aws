@@ -17,8 +17,6 @@
 #include "mgos_features.h"
 #include "mgos_init.h"
 
-#include "mgos_aws.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -89,8 +87,6 @@ bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...);
  * "Simple" version of mgos_aws_shadow_updatef, primarily for FFI.
  */
 bool mgos_aws_shadow_update_simple(double version, const char *state_json);
-
-bool mgos_aws_shadow_init(void);
 
 #ifdef __cplusplus
 }

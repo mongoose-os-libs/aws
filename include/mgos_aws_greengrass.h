@@ -17,8 +17,6 @@
 
 #include <mgos_net.h>
 
-#include "mgos_aws.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

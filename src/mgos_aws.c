@@ -3,9 +3,8 @@
  * All rights reserved
  */
 
-#include "mgos_aws.h"
 #include "mgos_aws_greengrass.h"
-#include "mgos_aws_shadow.h"
+#include "mgos_aws_shadow_internal.h"
 #include "mgos_event.h"
 #include "mgos_sys_config.h"
 
