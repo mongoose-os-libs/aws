@@ -60,7 +60,7 @@ blog post.
 
 This library adds an `aws` configuration section to the device:
 
-```json
+```javascript
 "aws": {
   "shadow": {
     "thing_name": ""
