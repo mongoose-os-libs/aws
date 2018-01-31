@@ -22,8 +22,8 @@ bool mgos_aws_init(void) {
     mgos_sys_config_set_aws_thing_name(mgos_sys_config_get_device_id());
   }
 
-  LOG(LL_INFO, ("AWS Greengrass enable (%d)",
-                mgos_sys_config_get_aws_greengrass_enable()));
+  LOG(LL_DEBUG, ("AWS Greengrass enable (%d)",
+                 mgos_sys_config_get_aws_greengrass_enable()));
 
   mgos_event_add_handler(MGOS_EVENT_INIT_DONE,
                          (mgos_event_handler_t) mgos_aws_shadow_init, NULL);
