@@ -3,6 +3,8 @@
  * All rights reserved
  */
 
+#include "common/cs_dbg.h"
+
 #include "mgos_aws_greengrass.h"
 #include "mgos_aws_shadow_internal.h"
 #include "mgos_event.h"
