@@ -522,7 +522,7 @@ bool mgos_aws_shadow_init(void) {
     return false;
   }
   const char *mqtt_server = mgos_sys_config_get_mqtt_server();
-  if (mqtt_server == NULL || strstr(mqtt_server, "amazonaws.com") == NULL) {
+  if (mqtt_server == NULL) {
     LOG(LL_ERROR, ("MQTT is not configured for AWS, not initialising shadow"));
     return false;
   }
