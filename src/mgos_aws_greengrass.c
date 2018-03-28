@@ -7,8 +7,8 @@
 #include <stdbool.h>
 
 #include "common/cs_dbg.h"
-#include "frozen/frozen.h"
-#include "mongoose/mongoose.h"
+#include "frozen.h"
+#include "mongoose.h"
 
 #include "mgos_mqtt.h"
 #include "mgos_sys_config.h"

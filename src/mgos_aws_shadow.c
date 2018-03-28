@@ -9,8 +9,8 @@
 #include "common/cs_dbg.h"
 #include "common/json_utils.h"
 #include "common/mg_str.h"
-#include "frozen/frozen.h"
-#include "mongoose/mongoose.h"
+#include "frozen.h"
+#include "mongoose.h"
 
 #include "mgos_aws_shadow_internal.h"
 #include "mgos_hal.h"
