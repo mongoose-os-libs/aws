@@ -520,6 +520,7 @@ static void update_cb(int ev, void *ev_data, void *userdata) {
 
 bool mgos_aws_shadow_init(void) {
   const char *impl = mgos_sys_config_get_shadow_lib();
+  if (!mgos_sys_config_get_shadow_enable()) return true;
   if (impl != NULL && strcmp(impl, "aws") != 0) {
     LOG(LL_DEBUG, ("shadow.lib=%s, not initialising AWS shadow", impl));
     return false;
