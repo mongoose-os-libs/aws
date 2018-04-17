@@ -21,15 +21,16 @@
 #include "common/cs_dbg.h"
 #include "common/json_utils.h"
 #include "common/mg_str.h"
+#include "common/queue.h"
 #include "frozen.h"
 #include "mongoose.h"
 
 #include "mgos_aws_shadow_internal.h"
-#include "mgos_hal.h"
 #include "mgos_mongoose_internal.h"
 #include "mgos_mqtt.h"
 #include "mgos_shadow.h"
 #include "mgos_sys_config.h"
+#include "mgos_system.h"
 #include "mgos_utils.h"
 
 #include "mgos_aws_shadow.h"
@@ -72,12 +73,14 @@ struct update_pending {
 };
 
 struct aws_shadow_state {
+  struct mgos_rlock_type *lock;
   struct mg_str thing_name;
   uint64_t current_version;
   unsigned int sub_id : 16;
-  unsigned int online : 1;
+  unsigned int connected : 1;
   unsigned int want_get : 1;
   unsigned int sent_get : 1;
+  unsigned int have_get : 1;
   STAILQ_HEAD(update_entries, update_pending) update_entries;
   SLIST_HEAD(state_cb_entries, state_cb) state_cb_entries;
   SLIST_HEAD(error_cb_entries, error_cb) error_cb_entries;
@@ -218,10 +221,10 @@ static bool is_our_token(const struct aws_shadow_state *ss,
 static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
                                void *user_data) {
   struct aws_shadow_state *ss = (struct aws_shadow_state *) user_data;
-  mgos_lock();
+  mgos_rlock(ss->lock);
   switch (ev) {
     case MG_EV_POLL: {
-      if (!ss->online) break;
+      if (!ss->connected) break;
       if (ss->want_get && !ss->sent_get) {
         LOG(LL_INFO,
             ("Requesting state, current version %llu", ss->current_version));
@@ -254,7 +257,7 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
       break;
     }
     case MG_EV_CLOSE: {
-      ss->online = ss->sent_get = false;
+      ss->connected = ss->sent_get = false;
       break;
     }
     case MG_EV_MQTT_CONNACK: {
@@ -284,8 +287,8 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
       struct mg_mqtt_message *msg = (struct mg_mqtt_message *) ev_data;
       if (msg->message_id == ss->sub_id) {
         LOG(LL_INFO, ("Subscribed"));
-        ss->online = true;
-        ss->sent_get = false;
+        ss->connected = ss->want_get = true;
+        ss->sent_get = ss->have_get = false;
         const struct mg_str empty = mg_mk_str_n("", 0);
         struct state_cb *e;
         SLIST_FOREACH(e, &ss->state_cb_entries, link) {
@@ -350,9 +353,16 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
             if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
             break;
           }
-
-          int ev = MGOS_SHADOW_CONNECTED + topic_id_to_aws_ev(topic_id);
-          mgos_event_trigger(ev, &msg->payload);
+          if (topic_id == MGOS_AWS_SHADOW_TOPIC_GET_ACCEPTED) {
+            ss->have_get = true;
+          }
+          {
+            struct json_token st = JSON_INVALID_TOKEN;
+            int ev = MGOS_SHADOW_CONNECTED + topic_id_to_aws_ev(topic_id);
+            json_scanf(msg->payload.p, msg->payload.len, "{state:%T}", &st);
+            struct mg_str state = {.p = st.ptr, .len = st.len};
+            mgos_event_trigger(ev, &state);
+          }
           LOG(LL_DEBUG,
               ("%d [%.*s]", ev, (int) msg->payload.len, msg->payload.p));
 
@@ -375,17 +385,20 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
                        "metadata:{reported:%T, desired:%T}}",
                        &reported, &desired, &reported_md, &desired_md);
           }
-          mgos_unlock();
+          mgos_runlock(ss->lock);
           struct state_cb *e;
-          SLIST_FOREACH(e, &ss->state_cb_entries, link) {
-            e->cb(e->userdata, topic_id_to_aws_ev(topic_id), version,
-                  mg_mk_str_n(reported.ptr, reported.len),
-                  mg_mk_str_n(desired.ptr, desired.len),
-                  mg_mk_str_n(reported_md.ptr, reported_md.len),
-                  mg_mk_str_n(desired_md.ptr, desired_md.len));
+          /* Only deliver deltas after a successful GET. */
+          if (topic_id != MGOS_AWS_SHADOW_TOPIC_UPDATE_DELTA || ss->have_get) {
+            SLIST_FOREACH(e, &ss->state_cb_entries, link) {
+              e->cb(e->userdata, topic_id_to_aws_ev(topic_id), version,
+                    mg_mk_str_n(reported.ptr, reported.len),
+                    mg_mk_str_n(desired.ptr, desired.len),
+                    mg_mk_str_n(reported_md.ptr, reported_md.len),
+                    mg_mk_str_n(desired_md.ptr, desired_md.len));
+            }
           }
           if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
-          mgos_lock();
+          mgos_rlock(ss->lock);
           ss->current_version = version;
           break;
         }
@@ -400,13 +413,13 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
           se.message.len = strlen(message);
           mgos_event_trigger(topic_id + MGOS_SHADOW_CONNECTED, &se);
           LOG(LL_ERROR, ("Error: %d %s", se.code, (message ? message : "")));
-          mgos_unlock();
+          mgos_runlock(ss->lock);
           struct error_cb *e;
           SLIST_FOREACH(e, &ss->error_cb_entries, link) {
             e->cb(e->userdata, topic_id_to_aws_ev(topic_id), se.code,
                   message ? message : "");
           }
-          mgos_lock();
+          mgos_rlock(ss->lock);
           free(message);
           break;
         }
@@ -419,7 +432,7 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
       break;
     }
   }
-  mgos_unlock();
+  mgos_runlock(ss->lock);
 }
 
 bool mgos_aws_shadow_set_state_handler(mgos_aws_shadow_state_handler state_cb,
@@ -429,55 +442,60 @@ bool mgos_aws_shadow_set_state_handler(mgos_aws_shadow_state_handler state_cb,
                 "use the shadow lib with AWS backend instead "
                 "(https://github.com/mongoose-os-libs/shadow)."));
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
-  mgos_lock();
+  mgos_rlock(s_shadow_state->lock);
   struct state_cb *e = calloc(1, sizeof(*e));
   e->cb = state_cb;
   e->userdata = arg;
   SLIST_INSERT_HEAD(&s_shadow_state->state_cb_entries, e, link);
-  mgos_unlock();
+  mgos_runlock(s_shadow_state->lock);
   return true;
 }
 
 bool mgos_aws_shadow_set_error_handler(mgos_aws_shadow_error_handler error_cb,
                                        void *arg) {
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
-  mgos_lock();
+  mgos_rlock(s_shadow_state->lock);
   struct error_cb *e = calloc(1, sizeof(*e));
   e->cb = error_cb;
   e->userdata = arg;
   SLIST_INSERT_HEAD(&s_shadow_state->error_cb_entries, e, link);
-  mgos_unlock();
+  mgos_runlock(s_shadow_state->lock);
   return true;
 }
 
 bool mgos_aws_shadow_get(void) {
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
-  mgos_lock();
+  mgos_rlock(s_shadow_state->lock);
   s_shadow_state->want_get = true;
-  mgos_unlock();
+  mgos_runlock(s_shadow_state->lock);
   mongoose_schedule_poll(false /* from_isr */);
   return true;
 }
 
 bool mgos_aws_shadow_updatevf(uint64_t version, const char *state_jsonf,
                               va_list ap) {
+  bool res = false;
+  struct update_pending *up = NULL;
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
-  mgos_lock();
-  struct update_pending *up = calloc(1, sizeof(*up));
+  up = (struct update_pending *) calloc(1, sizeof(*up));
+  if (up != NULL) return false;
   mbuf_init(&up->data, 50);
-  STAILQ_INSERT_TAIL(&s_shadow_state->update_entries, up, link);
   char token[TOKEN_BUF_SIZE];
   calc_token(s_shadow_state, token);
   struct json_out out = JSON_OUT_MBUF(&up->data);
-  json_printf(&out, "{state: ");
+  json_printf(&out, "{state: {reported: ");
   json_vprintf(&out, state_jsonf, ap);
+  json_printf(&out, "}");
   if (version > 0) {
     json_printf(&out, ", version: %llu", version);
   }
   json_printf(&out, ", clientToken: \"%s\"}", token);
-  mgos_unlock();
+  mgos_rlock(s_shadow_state->lock);
+  STAILQ_INSERT_TAIL(&s_shadow_state->update_entries, up, link);
+  mgos_runlock(s_shadow_state->lock);
   mongoose_schedule_poll(false /* from_isr */);
-  return true;
+  res = true;
+  return res;
 }
 
 bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...) {
@@ -542,6 +560,7 @@ bool mgos_aws_shadow_init(void) {
 
   struct aws_shadow_state *ss =
       (struct aws_shadow_state *) calloc(1, sizeof(*ss));
+  ss->lock = mgos_rlock_create();
   ss->thing_name = mg_mk_str(thing_name);
   STAILQ_INIT(&ss->update_entries);
   SLIST_INIT(&ss->state_cb_entries);
