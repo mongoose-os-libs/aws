@@ -478,7 +478,7 @@ bool mgos_aws_shadow_updatevf(uint64_t version, const char *state_jsonf,
   struct update_pending *up = NULL;
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
   up = (struct update_pending *) calloc(1, sizeof(*up));
-  if (up != NULL) return false;
+  if (up == NULL) return false;
   mbuf_init(&up->data, 50);
   char token[TOKEN_BUF_SIZE];
   calc_token(s_shadow_state, token);
