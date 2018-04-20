@@ -31,12 +31,12 @@ let AWS = {
     // // When cloud sends us a command to update state ("desired"), do it
     // AWS.Shadow.setStateHandler(function(data, event, reported, desired, reported_metadata, desired_metadata) {
     //   if (event === AWS.Shadow.CONNECTED) {
-    //     AWS.Shadow.update(0, {reported: state});  // Report device state
+    //     AWS.Shadow.update(0, state);  // Report device state
     //   } else if (event === AWS.Shadow.UPDATE_DELTA) {
     //     for (let key in state) {
     //       if (desired[key] !== undefined) state[key] = desired[key];
     //     }
-    //     AWS.Shadow.update(0, {reported: state});  // Report device state
+    //     AWS.Shadow.update(0, state);  // Report device state
     //   }
     //   print(JSON.stringify(reported), JSON.stringify(desired));
     // }, null);
