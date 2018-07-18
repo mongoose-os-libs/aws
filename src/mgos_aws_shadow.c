@@ -411,7 +411,7 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
                      "{code: %d, message: %Q}", &se.code, &message);
           se.message.p = message ? message : "";
           se.message.len = strlen(message);
-          mgos_event_trigger(topic_id + MGOS_SHADOW_CONNECTED, &se);
+          mgos_event_trigger(topic_id_to_aws_ev(topic_id) + MGOS_SHADOW_CONNECTED, &se);
           LOG(LL_ERROR, ("Error: %d %s", se.code, (message ? message : "")));
           mgos_runlock(ss->lock);
           struct error_cb *e;
