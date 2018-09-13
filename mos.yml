@@ -35,5 +35,6 @@ libs:
 tags:
   - c
   - cloud
+  - docs:cloud:Amazon IoT
 
 manifest_version: 2017-09-29
