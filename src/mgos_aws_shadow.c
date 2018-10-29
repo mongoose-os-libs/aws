@@ -544,7 +544,7 @@ bool mgos_aws_shadow_init(void) {
     return false;
   }
   if (!mgos_sys_config_get_mqtt_enable()) {
-    LOG(LL_ERROR, ("AWS Device Shadow requires MQTT"));
+    LOG(LL_DEBUG, ("AWS Device Shadow requires MQTT"));
     return false;
   }
   const char *thing_name = NULL;
