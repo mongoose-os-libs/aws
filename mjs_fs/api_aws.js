@@ -1,4 +1,8 @@
 let AWS = {
+  // ## **`AWS.isConnected()`**
+  // Return value: true if AWS connection is up, false otherwise.
+  isConnected: ffi('bool mgos_aws_is_connected()'),
+
   Shadow: {
     _seth: ffi('void mgos_aws_shadow_set_state_handler_simple(int (*)(userdata, int, char *, char *, char *, char *), userdata)'),
     _upd: ffi('int mgos_aws_shadow_update_simple(double, char *)'),

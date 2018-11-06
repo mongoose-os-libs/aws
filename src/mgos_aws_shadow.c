@@ -26,6 +26,7 @@
 #include "mongoose.h"
 
 #include "mgos_aws_shadow_internal.h"
+#include "mgos_event.h"
 #include "mgos_mongoose_internal.h"
 #include "mgos_mqtt.h"
 #include "mgos_shadow.h"
@@ -257,6 +258,10 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
       break;
     }
     case MG_EV_CLOSE: {
+      if (ss->connected) {
+        struct mgos_cloud_arg arg = {.type = MGOS_CLOUD_AWS};
+        mgos_event_trigger(MGOS_EVENT_CLOUD_DISCONNECTED, &arg);
+      }
       ss->connected = ss->sent_get = false;
       break;
     }
@@ -295,6 +300,8 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
           e->cb(e->userdata, MGOS_AWS_SHADOW_CONNECTED, 0, empty, empty, empty,
                 empty);
         }
+        struct mgos_cloud_arg arg = {.type = MGOS_CLOUD_AWS};
+        mgos_event_trigger(MGOS_EVENT_CLOUD_CONNECTED, &arg);
         mgos_event_trigger(MGOS_SHADOW_CONNECTED, NULL);
       }
       break;
@@ -527,6 +534,10 @@ const char *mgos_aws_shadow_event_name(enum mgos_aws_shadow_event ev) {
       return "UPDATE_DELTA";
   }
   return "";
+}
+
+bool mgos_aws_is_connected(void) {
+  return (s_shadow_state != NULL && s_shadow_state->connected);
 }
 
 static void update_cb(int ev, void *ev_data, void *userdata) {

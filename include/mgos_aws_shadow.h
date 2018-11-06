@@ -33,6 +33,9 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/* Returns true if AWS connection is up, false otherwise. */
+bool mgos_aws_is_connected(void);
+
 enum mgos_aws_shadow_event {
   MGOS_AWS_SHADOW_CONNECTED = 0,
   MGOS_AWS_SHADOW_GET_ACCEPTED = 1,
