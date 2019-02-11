@@ -189,7 +189,7 @@ static enum mgos_aws_shadow_event topic_id_to_aws_ev(
     case MGOS_AWS_SHADOW_TOPIC_GET_ACCEPTED:
       return MGOS_AWS_SHADOW_GET_ACCEPTED;
     case MGOS_AWS_SHADOW_TOPIC_GET_REJECTED:
-      return MGOS_AWS_SHADOW_UPDATE_REJECTED;
+      return MGOS_AWS_SHADOW_GET_REJECTED;
     case MGOS_AWS_SHADOW_TOPIC_UPDATE_ACCEPTED:
       return MGOS_AWS_SHADOW_UPDATE_ACCEPTED;
     case MGOS_AWS_SHADOW_TOPIC_UPDATE_REJECTED:
@@ -418,7 +418,8 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
                      "{code: %d, message: %Q}", &se.code, &message);
           se.message.p = message ? message : "";
           se.message.len = strlen(message);
-          mgos_event_trigger(topic_id + MGOS_SHADOW_CONNECTED, &se);
+          mgos_event_trigger(
+              MGOS_SHADOW_CONNECTED + topic_id_to_aws_ev(topic_id), &se);
           LOG(LL_ERROR, ("Error: %d %s", se.code, (message ? message : "")));
           mgos_runlock(ss->lock);
           struct error_cb *e;
