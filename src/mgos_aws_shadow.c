@@ -227,8 +227,8 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
     case MG_EV_POLL: {
       if (!ss->connected) break;
       if (ss->want_get && !ss->sent_get) {
-        LOG(LL_INFO,
-            ("Requesting state, current version %llu", ss->current_version));
+        LOG(LL_INFO, ("Requesting state, current version %llu",
+                      (unsigned long long) ss->current_version));
         char *topic = get_aws_shadow_topic_name(ss->thing_name,
                                                 MGOS_AWS_SHADOW_TOPIC_GET);
         struct mbuf buf;
@@ -353,8 +353,9 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
           uint64_t version = 0;
           json_scanf(msg->payload.p, msg->payload.len, "{version:%llu}",
                      &version);
-          LOG(LL_INFO, ("Version: %llu -> %llu (%d)", ss->current_version,
-                        version, topic_id));
+          LOG(LL_INFO, ("Version: %llu -> %llu (%d)",
+                        (unsigned long long) ss->current_version,
+                        (unsigned long long) version, topic_id));
           if (version < ss->current_version) {
             /* Thanks, not interested. */
             if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
