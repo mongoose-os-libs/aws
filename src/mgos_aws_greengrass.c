@@ -52,7 +52,8 @@ static void aws_gg_handler(struct mg_connection *nc, int ev, void *ev_data,
       char a[32] = {0};
 
       struct http_message *hm = (struct http_message *) ev_data;
-      LOG(LL_DEBUG, ("AWS Greengrass reply: %.*s", hm->body.len, hm->body.p));
+      LOG(LL_DEBUG,
+          ("AWS Greengrass reply: %.*s", (int) hm->body.len, hm->body.p));
 
       /* Parse reply */
       for (int i = 0; json_scanf_array_elem(
@@ -153,7 +154,8 @@ static char *aws_make_gg_url(const char *server, int port,
   if (p == server || (len = p - server) == 0) return NULL;
   s = calloc(1, len + strlen(thing_path) + strlen(thing_name) +
                     14); /* 'https://' + '65535' + '\0' */
-  sprintf(s, "https://%.*s:%d%s%s", len, server, port, thing_path, thing_name);
+  sprintf(s, "https://%.*s:%d%s%s", (int) len, server, port, thing_path,
+          thing_name);
   return s;
 }
 
