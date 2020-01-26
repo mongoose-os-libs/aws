@@ -24,14 +24,13 @@
  * GG core bootstrapping is done transparently by the library.
  */
 
-#ifndef CS_MOS_LIBS_AWS_SRC_MGOS_AWS_GREENGRASS_H_
-#define CS_MOS_LIBS_AWS_SRC_MGOS_AWS_GREENGRASS_H_
+#pragma once
 
 #include <mgos_net.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
 #if MG_ENABLE_SSL
 
@@ -45,6 +44,4 @@ void aws_gg_reconnect(void);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
-
-#endif /* CS_MOS_LIBS_AWS_SRC_MGOS_AWS_GREENGRASS_H_ */
+#endif

@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "common/cs_dbg.h"
 #include "frozen.h"

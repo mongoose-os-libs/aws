@@ -19,8 +19,7 @@
  * AWS device shadow API.
  */
 
-#ifndef CS_MOS_LIBS_AWS_SRC_MGOS_AWS_SHADOW_H_
-#define CS_MOS_LIBS_AWS_SRC_MGOS_AWS_SHADOW_H_
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -31,7 +30,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
 /* Returns true if AWS connection is up, false otherwise. */
 bool mgos_aws_is_connected(void);
@@ -105,6 +104,4 @@ bool mgos_aws_shadow_update_simple(double version, const char *state_json);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
-
-#endif /* CS_MOS_LIBS_AWS_SRC_MGOS_AWS_SHADOW_H_ */
+#endif
