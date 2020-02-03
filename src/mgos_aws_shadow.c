@@ -271,8 +271,9 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
       struct mg_mqtt_message *msg = (struct mg_mqtt_message *) ev_data;
       if (msg->message_id == ss->sub_id) {
         LOG(LL_INFO, ("Subscribed"));
-        ss->connected = ss->want_get = true;
+        ss->connected = true;
         ss->sent_get = ss->have_get = false;
+        ss->want_get = mgos_sys_config_get_shadow_get_on_connect();
         const struct mg_str empty = mg_mk_str_n("", 0);
         struct state_cb *e;
         SLIST_FOREACH(e, &ss->state_cb_entries, link) {
