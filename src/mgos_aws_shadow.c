@@ -71,7 +71,6 @@ struct error_cb {
 struct aws_shadow_state {
   struct mgos_rlock_type *lock;
   struct mg_str thing_name;
-  uint64_t current_version;
   unsigned int sub_id : 16;
   unsigned int connected : 1;
   unsigned int want_get : 1;
@@ -221,8 +220,7 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
     case MG_EV_POLL: {
       if (!ss->connected) break;
       if (ss->want_get && !ss->sent_get) {
-        LOG(LL_INFO, ("Requesting state, current version %llu",
-                      (unsigned long long) ss->current_version));
+        LOG(LL_DEBUG, ("Requesting state"));
         char *topic = get_aws_shadow_topic_name(ss->thing_name,
                                                 MGOS_AWS_SHADOW_TOPIC_GET);
         struct mbuf buf;
@@ -334,14 +332,8 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
           uint64_t version = 0;
           json_scanf(msg->payload.p, msg->payload.len, "{version:%llu}",
                      &version);
-          LOG(LL_INFO, ("Version: %llu -> %llu (%d)",
-                        (unsigned long long) ss->current_version,
-                        (unsigned long long) version, topic_id));
-          if (version < ss->current_version) {
-            /* Thanks, not interested. */
-            if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
-            break;
-          }
+          LOG(LL_DEBUG,
+              ("Version: %llu (%d)", (unsigned long long) version, topic_id));
           if (topic_id == MGOS_AWS_SHADOW_TOPIC_GET_ACCEPTED) {
             ss->have_get = true;
           }
@@ -388,7 +380,6 @@ static void mgos_aws_shadow_ev(struct mg_connection *nc, int ev, void *ev_data,
           }
           if (msg->qos > 0) mg_mqtt_puback(nc, msg->message_id);
           mgos_rlock(ss->lock);
-          ss->current_version = version;
           break;
         }
         case MGOS_AWS_SHADOW_TOPIC_GET_REJECTED:
