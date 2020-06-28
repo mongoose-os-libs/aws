@@ -522,6 +522,13 @@ static void update_cb(int ev, void *ev_data, void *userdata) {
   (void) ev;
 }
 
+static void shadow_get_cb(int ev, void *ev_data, void *cb_arg) {
+  mgos_aws_shadow_get();
+  (void) ev;
+  (void) ev_data;
+  (void) cb_arg;
+}
+
 bool mgos_aws_shadow_init(void) {
   const char *impl = mgos_sys_config_get_shadow_lib();
   if (!mgos_sys_config_get_shadow_enable()) return true;
@@ -555,8 +562,7 @@ bool mgos_aws_shadow_init(void) {
   s_shadow_state = ss;
   char token[TOKEN_BUF_SIZE];
   calc_token(ss, token);
-  mgos_event_add_handler(MGOS_SHADOW_GET,
-                         (mgos_event_handler_t) mgos_aws_shadow_get, NULL);
+  mgos_event_add_handler(MGOS_SHADOW_GET, shadow_get_cb, NULL);
   mgos_event_add_handler(MGOS_SHADOW_UPDATE, update_cb, NULL);
   LOG(LL_INFO, ("Device shadow name: %.*s (token %s)", (int) ss->thing_name.len,
                 ss->thing_name.p, token));

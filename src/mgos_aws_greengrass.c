@@ -81,7 +81,7 @@ static void aws_gg_handler(struct mg_connection *nc, int ev, void *ev_data,
           char *s = calloc(1, t.len + 3); /* '"' + token + '"' + '\0' */
           s[0] = '"';
           strncat(s, t.ptr, t.len);
-          strncat(s, "\"", 1);
+          strcat(s, "\"");
           json_scanf(s, strlen(s), "%Q", &ggca);
           free(s);
         }

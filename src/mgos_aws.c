@@ -22,6 +22,13 @@
 #include "mgos_event.h"
 #include "mgos_sys_config.h"
 
+static void init_done_cb(int ev, void *ev_data, void *cb_arg) {
+  mgos_aws_shadow_init();
+  (void) ev;
+  (void) ev_data;
+  (void) cb_arg;
+}
+
 bool mgos_aws_init(void) {
   /*
    * If aws.thing_name is set explicitly, persist expanded MAC placeholders in
@@ -39,8 +46,7 @@ bool mgos_aws_init(void) {
   LOG(LL_DEBUG, ("AWS Greengrass enable (%d)",
                  mgos_sys_config_get_aws_greengrass_enable()));
 
-  mgos_event_add_handler(MGOS_EVENT_INIT_DONE,
-                         (mgos_event_handler_t) mgos_aws_shadow_init, NULL);
+  mgos_event_add_handler(MGOS_EVENT_INIT_DONE, init_done_cb, NULL);
 
   if (mgos_sys_config_get_aws_greengrass_enable() &&
       !mgos_sys_config_get_mqtt_enable()) {
