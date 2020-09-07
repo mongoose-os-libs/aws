@@ -90,17 +90,38 @@ bool mgos_aws_shadow_get(void);
 /*
  * Send an update. Format string should define the value of the "state" key,
  * i.e. it should be an object with an update to the reported state, e.g.:
- * `mgos_aws_shadow_updatef("{foo: %d, bar: %d}", foo, bar)`.
+ * `mgos_aws_shadow_updatef(0,"{foo: %d, bar: %d}", foo, bar)`.
  * Response will arrive via UPDATE_ACCEPTED or REJECTED topic.
  * If you want the update to be aplied only if a particular version is current,
  * specify the version. Otherwise set it to 0 to apply to any version.
  */
 bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...);
+/*
+ * Send an update requesting the desired state.
+ * Format string should define the value of the "state" key,
+ * i.e. it should be an object with an update to the desired state, e.g.:
+ * `mgos_aws_shadow_desiredf(0,"{foo: %d, bar: %d}", foo, bar)`.
+ * Response will arrive via UPDATE_ACCEPTED or REJECTED topic.
+ * If you want the update to be aplied only if a particular version is current,
+ * specify the version. Otherwise set it to 0 to apply to any version.
+ */
+bool mgos_aws_shadow_desiredf(uint64_t version, const char *state_jsonf, ...);
+/*
+ * Send an update and request it to be the desired state, when that has already
+ * been changed locally. Format string should define the value of the "state" key,
+ * i.e. it should be an object with an update to both the desired and reported states, e.g.:
+ * `mgos_aws_shadow_forcef("{foo: %d, bar: %d}", foo, bar)`.
+ * Response will arrive via UPDATE_ACCEPTED or REJECTED topic.
+ * The update will be applied regardless of the version, since it is the current local state
+ */
+bool mgos_aws_shadow_forcef(const char *state_jsonf, ...);
 
 /*
- * "Simple" version of mgos_aws_shadow_updatef, primarily for FFI.
+ * "Simple" versions, primarily for FFI.
  */
 bool mgos_aws_shadow_update_simple(double version, const char *state_json);
+bool mgos_aws_shadow_desired_simple(double version, const char *state_json);
+bool mgos_aws_shadow_force_simple(const char *state_json);
 
 #ifdef __cplusplus
 }

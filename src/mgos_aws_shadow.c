@@ -454,8 +454,14 @@ bool mgos_aws_shadow_get(void) {
   return true;
 }
 
-bool mgos_aws_shadow_updatevf(uint64_t version, const char *state_jsonf,
-                              va_list ap) {
+enum mgos_aws_shadow_update_mode {
+  MGOS_AWS_SHADOW_UPDATE_MODE_REPORTED = 0,
+  MGOS_AWS_SHADOW_UPDATE_MODE_DESIRED,
+  MGOS_AWS_SHADOW_UPDATE_MODE_BOTH,
+};
+
+static bool mgos_aws_shadow_updatevf(enum mgos_aws_shadow_update_mode mode, uint64_t version,
+                              const char *state_jsonf, va_list ap) {
   bool res = false;
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
   struct mbuf data;
@@ -463,8 +469,19 @@ bool mgos_aws_shadow_updatevf(uint64_t version, const char *state_jsonf,
   char token[TOKEN_BUF_SIZE];
   calc_token(s_shadow_state, token);
   struct json_out out = JSON_OUT_MBUF(&data);
-  json_printf(&out, "{state: {reported: ");
-  json_vprintf(&out, state_jsonf, ap);
+  json_printf(&out, "{state: {");
+  switch(mode) {
+    default:
+      json_printf(&out, "desired: ");
+      json_vprintf(&out, state_jsonf, ap);
+      if (mode == MGOS_AWS_SHADOW_UPDATE_MODE_DESIRED) break;
+      json_printf(&out, ",");
+      /*FALLTHROUGH*/
+    case MGOS_AWS_SHADOW_UPDATE_MODE_REPORTED:
+      json_printf(&out, "reported: ");
+      json_vprintf(&out, state_jsonf, ap);
+      break;
+  }
   json_printf(&out, "}");
   if (version > 0) {
     json_printf(&out, ", version: %llu", version);
@@ -484,13 +501,35 @@ bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...) {
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
   va_list ap;
   va_start(ap, state_jsonf);
-  bool res = mgos_aws_shadow_updatevf(version, state_jsonf, ap);
+  bool res = mgos_aws_shadow_updatevf(MGOS_AWS_SHADOW_UPDATE_MODE_REPORTED, version, state_jsonf, ap);
+  va_end(ap);
+  return res;
+}
+bool mgos_aws_shadow_desiredf(uint64_t version, const char *state_jsonf, ...) {
+  if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
+  va_list ap;
+  va_start(ap, state_jsonf);
+  bool res = mgos_aws_shadow_updatevf(MGOS_AWS_SHADOW_UPDATE_MODE_DESIRED, version, state_jsonf, ap);
+  va_end(ap);
+  return res;
+}
+bool mgos_aws_shadow_forcef(const char *state_jsonf, ...) {
+  if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
+  va_list ap;
+  va_start(ap, state_jsonf);
+  bool res = mgos_aws_shadow_updatevf(MGOS_AWS_SHADOW_UPDATE_MODE_BOTH, 0, state_jsonf, ap);
   va_end(ap);
   return res;
 }
 
 bool mgos_aws_shadow_update_simple(double version, const char *state_json) {
   return mgos_aws_shadow_updatef(version, "%s", state_json);
+}
+bool mgos_aws_shadow_desired_simple(double version, const char *state_json) {
+  return mgos_aws_shadow_desiredf(version, "%s", state_json);
+}
+bool mgos_aws_shadow_force_simple(const char *state_json) {
+  return mgos_aws_shadow_forcef("%s", state_json);
 }
 
 const char *mgos_aws_shadow_event_name(enum mgos_aws_shadow_event ev) {
@@ -517,7 +556,7 @@ bool mgos_aws_is_connected(void) {
 
 static void update_cb(int ev, void *ev_data, void *userdata) {
   struct mgos_shadow_update_data *data = ev_data;
-  mgos_aws_shadow_updatevf(data->version, data->json_fmt, data->ap);
+  mgos_aws_shadow_updatevf(MGOS_AWS_SHADOW_UPDATE_MODE_REPORTED, data->version, data->json_fmt, data->ap);
   (void) userdata;
   (void) ev;
 }

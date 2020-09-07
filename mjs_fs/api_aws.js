@@ -11,7 +11,9 @@ let AWS = {
       des = des !== "" ? JSON.parse(des) : {};
       ud.cb(ud.ud, ev, rep, des, rm, dm);
     },
-
+    _dsr: ffi('int mgos_aws_shadow_desired_simple(double, char *)'),
+    _frc: ffi('int mgos_aws_shadow_force_simple(char *)'),
+    
     // ## **`AWS.Shadow.setStateHandler(callback, userdata)`**
     //
     // Set AWS shadow state handler callback.
@@ -68,7 +70,29 @@ let AWS = {
     //
     // Update AWS shadow state.
     //
-    // State should be an object with "reported" and/or "desired" keys.
+    // State should be an object with user keys and will be included in
+    // the "reported" key.
+    //
+    // Response will arrive via `UPDATE_ACCEPTED` or `UPDATE_REJECTED` events.
+    // If you want the update to be aplied only if a particular version is
+    // current, specify the version. Otherwise set it to 0 to apply to any
+    // version.
+    //
+    // Example:
+    // ```javascript
+    // // update current state
+    //   AWS.Shadow.update(0, {on: state.on});
+    // ```
+    update: function(ver, state) {
+      return this._upd(ver, JSON.stringify(state)) === 1;
+    },
+
+    // ## **`AWS.Shadow.desired(version, state);`**
+    //
+    // Request update AWS shadow state.
+    //
+    // State should be an object with user keys and will be included in
+    // the "desired" key.
     //
     // Response will arrive via `UPDATE_ACCEPTED` or `UPDATE_REJECTED` events.
     // If you want the update to be aplied only if a particular version is
@@ -80,11 +104,33 @@ let AWS = {
     // // On a button press, update press counter via the shadow
     // let buttonPin = 0;
     // GPIO.set_button_handler(buttonPin, GPIO.PULL_UP, GPIO.INT_EDGE_NEG, 200, function() {
-    //   AWS.Shadow.update(0, {desired: {on: state.on, counter: state.counter + 1}});
+    //   AWS.Shadow.update(0, {on: state.on, counter: state.counter + 1});
     // }, null);
     // ```
-    update: function(ver, state) {
-      return this._upd(ver, JSON.stringify(state)) === 1;
+    desired: function(ver, state) {
+      return this._dsr(ver, JSON.stringify(state)) === 1;
+    },
+
+    // ## **`AWS.Shadow.update(version, state);`**
+    //
+    // Forced update to AWS shadow state.
+    //
+    // State should be an object with user keys and will be included in
+    // the "reported" and "desired" keys.
+    //
+    // Response will arrive via `UPDATE_ACCEPTED` or `UPDATE_REJECTED` events.
+    // The update will be aplied regardless of the version
+    // since it is assumed that it corresponds to a locally changed state.
+    //
+    // Example:
+    // ```javascript
+    // // change current state
+    // GPIO.write(led_pin, state.on ? 1 : 0);
+    // // and update the shadow
+    //   AWS.Shadow.forced({on: state.on});
+    // ```
+    force: function(state) {
+      return this._frc(JSON.stringify(state)) === 1;
     },
 
     eventName: ffi('char *mgos_aws_shadow_event_name(int)'),
