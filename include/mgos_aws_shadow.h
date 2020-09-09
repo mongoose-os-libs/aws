@@ -106,7 +106,8 @@ bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...);
  * If you want the update to be aplied only if a particular version is current,
  * specify the version. Otherwise set it to 0 to apply to any version.
  */
-bool mgos_aws_shadow_update_extf(uint64_t version, const char *state_jsonf, ...);
+bool mgos_aws_shadow_update_extf(uint64_t version, const char *state_jsonf,
+                                 ...);
 
 /*
  * "Simple" versions, primarily for FFI.

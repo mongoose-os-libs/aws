@@ -455,7 +455,7 @@ bool mgos_aws_shadow_get(void) {
 }
 
 static bool mgos_aws_shadow_updatevf(bool ext, uint64_t version,
-                              const char *state_jsonf, va_list ap) {
+                                     const char *state_jsonf, va_list ap) {
   bool res = false;
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
   struct mbuf data;
@@ -464,9 +464,9 @@ static bool mgos_aws_shadow_updatevf(bool ext, uint64_t version,
   calc_token(s_shadow_state, token);
   struct json_out out = JSON_OUT_MBUF(&data);
   json_printf(&out, "{state: ");
-  if(!ext) json_printf(&out, "{reported: ");
+  if (!ext) json_printf(&out, "{reported: ");
   json_vprintf(&out, state_jsonf, ap);
-  if(!ext) json_printf(&out, "}");
+  if (!ext) json_printf(&out, "}");
   if (version > 0) {
     json_printf(&out, ", version: %llu", version);
   }
@@ -489,7 +489,8 @@ bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...) {
   va_end(ap);
   return res;
 }
-bool mgos_aws_shadow_update_extf(uint64_t version, const char *state_jsonf, ...) {
+bool mgos_aws_shadow_update_extf(uint64_t version, const char *state_jsonf,
+                                 ...) {
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
   va_list ap;
   va_start(ap, state_jsonf);
