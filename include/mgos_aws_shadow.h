@@ -88,19 +88,32 @@ bool mgos_aws_shadow_set_state_handler_simple(
 bool mgos_aws_shadow_get(void);
 
 /*
- * Send an update. Format string should define the value of the "state" key,
- * i.e. it should be an object with an update to the reported state, e.g.:
- * `mgos_aws_shadow_updatef("{foo: %d, bar: %d}", foo, bar)`.
+ * Send an update. Format string should define the value of the "reported" key
+ * inside the "state" key, i.e. it should be an object with an update to the
+ * reported state, e.g.:
+ * `mgos_aws_shadow_updatef(0,"{foo: %d, bar: %d}", foo, bar)`.
  * Response will arrive via UPDATE_ACCEPTED or REJECTED topic.
  * If you want the update to be aplied only if a particular version is current,
  * specify the version. Otherwise set it to 0 to apply to any version.
  */
 bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...);
+/*
+ * Send an update, extended. Format string should fully define the value of the
+ * "state" key, i.e. it should be an object with an update to the desired state,
+ * having the proper keys ("reported", "desired"), e.g.:
+ * `mgos_aws_shadow_update_extf(0,"{reported: {foo: %d, bar: %d}}", foo, bar)`.
+ * Response will arrive via UPDATE_ACCEPTED or REJECTED topic.
+ * If you want the update to be aplied only if a particular version is current,
+ * specify the version. Otherwise set it to 0 to apply to any version.
+ */
+bool mgos_aws_shadow_update_extf(uint64_t version, const char *state_jsonf,
+                                 ...);
 
 /*
- * "Simple" version of mgos_aws_shadow_updatef, primarily for FFI.
+ * "Simple" versions, primarily for FFI.
  */
 bool mgos_aws_shadow_update_simple(double version, const char *state_json);
+bool mgos_aws_shadow_update_ext_simple(double version, const char *state_json);
 
 #ifdef __cplusplus
 }

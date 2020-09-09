@@ -454,8 +454,8 @@ bool mgos_aws_shadow_get(void) {
   return true;
 }
 
-bool mgos_aws_shadow_updatevf(uint64_t version, const char *state_jsonf,
-                              va_list ap) {
+static bool mgos_aws_shadow_updatevf(bool ext, uint64_t version,
+                                     const char *state_jsonf, va_list ap) {
   bool res = false;
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
   struct mbuf data;
@@ -463,9 +463,10 @@ bool mgos_aws_shadow_updatevf(uint64_t version, const char *state_jsonf,
   char token[TOKEN_BUF_SIZE];
   calc_token(s_shadow_state, token);
   struct json_out out = JSON_OUT_MBUF(&data);
-  json_printf(&out, "{state: {reported: ");
+  json_printf(&out, "{state: ");
+  if (!ext) json_printf(&out, "{reported: ");
   json_vprintf(&out, state_jsonf, ap);
-  json_printf(&out, "}");
+  if (!ext) json_printf(&out, "}");
   if (version > 0) {
     json_printf(&out, ", version: %llu", version);
   }
@@ -484,13 +485,25 @@ bool mgos_aws_shadow_updatef(uint64_t version, const char *state_jsonf, ...) {
   if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
   va_list ap;
   va_start(ap, state_jsonf);
-  bool res = mgos_aws_shadow_updatevf(version, state_jsonf, ap);
+  bool res = mgos_aws_shadow_updatevf(false, version, state_jsonf, ap);
+  va_end(ap);
+  return res;
+}
+bool mgos_aws_shadow_update_extf(uint64_t version, const char *state_jsonf,
+                                 ...) {
+  if (s_shadow_state == NULL && !mgos_aws_shadow_init()) return false;
+  va_list ap;
+  va_start(ap, state_jsonf);
+  bool res = mgos_aws_shadow_updatevf(true, version, state_jsonf, ap);
   va_end(ap);
   return res;
 }
 
 bool mgos_aws_shadow_update_simple(double version, const char *state_json) {
   return mgos_aws_shadow_updatef(version, "%s", state_json);
+}
+bool mgos_aws_shadow_update_ext_simple(double version, const char *state_json) {
+  return mgos_aws_shadow_update_extf(version, "%s", state_json);
 }
 
 const char *mgos_aws_shadow_event_name(enum mgos_aws_shadow_event ev) {
@@ -517,7 +530,7 @@ bool mgos_aws_is_connected(void) {
 
 static void update_cb(int ev, void *ev_data, void *userdata) {
   struct mgos_shadow_update_data *data = ev_data;
-  mgos_aws_shadow_updatevf(data->version, data->json_fmt, data->ap);
+  mgos_aws_shadow_updatevf(false, data->version, data->json_fmt, data->ap);
   (void) userdata;
   (void) ev;
 }
