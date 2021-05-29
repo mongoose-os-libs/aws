@@ -28,9 +28,9 @@ conds:
         - ["mqtt.recv_mbuf_limit", 8192]
 
 libs:
-  - origin: https://github.com/mongoose-os-libs/ca-bundle
-  - origin: https://github.com/mongoose-os-libs/mqtt
-  - origin: https://github.com/mongoose-os-libs/shadow
+  - location: https://github.com/mongoose-os-libs/ca-bundle
+  - location: https://github.com/mongoose-os-libs/mqtt
+  - location: https://github.com/mongoose-os-libs/shadow
 
 tags:
   - c
